@@ -1,13 +1,23 @@
-import { useState } from 'react'
-import './App.css'
+import React, { useState } from 'react';
+import InputForm from './components/InputForm';
+// import PredictionResult from './components/PredictionResult';
+// import Charts from './components/Charts';
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+    const [prediction, setPrediction] = useState(null);
 
-  return (
-    <>
-    </>
-  )
-}
+    const handlePrediction = (pred) => {
+        setPrediction(pred);
+    };
 
-export default App
+    return (
+        <div className="container mt-5">
+            <h1 className="text-center mb-4">Flight Delay Prediction</h1>
+            <InputForm onPrediction={handlePrediction} />
+            {/* {prediction && <PredictionResult prediction={prediction} />}
+            {prediction && <Charts data={{ labels: ['Predicted Delay'], values: [prediction] }} />} */}
+        </div>
+    );
+};
+
+export default App;
