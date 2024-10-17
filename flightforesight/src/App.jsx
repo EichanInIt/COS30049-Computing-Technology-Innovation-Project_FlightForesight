@@ -1,14 +1,27 @@
 // src/App.jsx
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import './App.css';
 import CustomNavbar from './components/Navbar';
-import FlightSearch from './components/InputForm';
+import About from './components/About';
+import Footer from './components/Footer';
+import InputForm from './components/InputForm'; // Assuming this is the Home page component
 
 function App() {
   return (
-    <>
-      <CustomNavbar />
-      <FlightSearch />
-    </>
+    <Router>
+      <div className="app-container">
+        <CustomNavbar />
+        <main className="content">
+          <Routes>
+            <Route path="/" element={<InputForm />} /> {/* Home route */}
+            <Route path="/about" element={<About />} />
+            {/* Add other routes here if needed */}
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </Router>
   );
 }
 
