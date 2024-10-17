@@ -3,23 +3,24 @@ import React from 'react';
 import { Navbar, Nav } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './Navbar.css';
+import { Link } from 'react-router-dom';
 
 function CustomNavbar() {
   return (
     <Navbar bg="light" expand="lg" className="custom-navbar px-4">
-      <Navbar.Brand href="#home" className="navbar-brand">
+      <Navbar.Brand as={Link} to="/" className="navbar-brand">
         FlightForesight
       </Navbar.Brand>
       <Navbar.Toggle aria-controls="basic-navbar-nav" />
       <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
         <Nav>
-          <Nav.Link href="#home" className="nav-link">
+          <Nav.Link as={Link} to="/" className="btn btn-outline-primary nav-button">
             Home
           </Nav.Link>
-          <Nav.Link href="#about" className="nav-link">
+          <Nav.Link as={Link} to="/about" className="btn btn-outline-primary nav-button">
             About
           </Nav.Link>
-          <Nav.Link href="https://github.com/EichanInIt/COS30049-Computing-Technology-Innovation-Project_FlightForesight" target="_blank" rel="noopener noreferrer" className="nav-link">
+          <Nav.Link href="https://github.com/EichanInIt/COS30049-Computing-Technology-Innovation-Project_FlightForesight" target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary nav-button">
             Github
           </Nav.Link>
         </Nav>
