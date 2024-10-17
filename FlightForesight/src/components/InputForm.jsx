@@ -1,173 +1,195 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import Papa from "papaparse";
+import FlightPathChart from "./FlightPathChart"; // Import the FlightPathChart component
+import { 
+  TextField, 
+  Button, 
+  Container, 
+  Paper, 
+  Typography, 
+  Grid, 
+  CircularProgress 
+} from "@mui/material";
 
-const InputForm = ({ onPrediction }) => {
-    const [inputs, setInputs] = useState({
-        date: '',
-        originAirport: '',
-        destinationAirport: '',
-        scheduledDeparture: '',
-        scheduledArrival: '',
-        departureDelay: '',
-        distance: ''
-    });
+const FlightSearch = () => {
+  const [departure, setDeparture] = useState("");
+  const [arrival, setArrival] = useState("");
+  const [departureTime, setDepartureTime] = useState("");
+  const [arrivalTime, setArrivalTime] = useState("");
+  const [confirmation, setConfirmation] = useState(null);
+  const [flightPath, setFlightPath] = useState([]);
+  const [airports, setAirports] = useState({});
+  const [loading, setLoading] = useState(false);
 
-    const [errors, setErrors] = useState({
-        originAirport: '',
-        destinationAirport: '',
-        distance: ''
-    });
+  const iataRegex = /^[A-Z]{3}$/;
 
-    const validateAirportCode = (code) => /^[A-Z]{3}$/.test(code); // Regex for exactly 3 uppercase letters
+  const fetchAirportsData = async () => {
+    const response = await fetch('./data.csv');
+    const reader = response.body.getReader();
+    const result = await reader.read();
+    const decodedString = new TextDecoder("utf-8").decode(result.value);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setInputs({ ...inputs, [name]: value });
-
-        // Validate airport codes
-        if (name === 'originAirport' || name === 'destinationAirport') {
-            if (!validateAirportCode(value)) {
-                setErrors({ ...errors, [name]: 'Invalid IATA code. Must be 3 uppercase letters.' });
-            } else {
-                setErrors({ ...errors, [name]: '' });
-            }
-        }
-
-    };
-
-    const convertToMinutes = (time) => {
-        const [hours, minutes] = time.split(':').map(Number);
-        return hours * 60 + minutes;
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const { scheduledDeparture, scheduledArrival, date, ...inputData } = inputs;
-
-        // Convert times to minutes from midnight
-        inputData.scheduledDeparture = convertToMinutes(scheduledDeparture);
-        inputData.scheduledArrival = convertToMinutes(scheduledArrival);
-
-        // Check if there are any errors before submitting
-        if (errors.originAirport || errors.destinationAirport || errors.distance) {
-            alert("Please fix the errors before submitting.");
-            return;
-        }
-
-        try {
-            const response = await axios.post('http://127.0.0.1:8000/predict', inputData);
-            onPrediction(response.data.prediction);
-        } catch (error) {
-            console.error("Prediction Error: ", error);
-        }
-    };
-
-    const handleDateChange = (e) => {
-        const selectedDate = new Date(e.target.value);
-        setInputs({
-            ...inputs,
-            date: e.target.value,
-            month: selectedDate.getMonth() + 1,
-            day: selectedDate.getDate(),
-            dayOfWeek: selectedDate.getDay() + 1
+    Papa.parse(decodedString, {
+      header: true,
+      complete: (results) => {
+        const airportData = {};
+        results.data.forEach((airport) => {
+          airportData[airport.iata.trim()] = {
+            name: airport.name,
+            lat: parseFloat(airport.latitude),
+            lon: parseFloat(airport.longitude),
+          };
         });
-    };
+        setAirports(airportData);
+      },
+    });
+  };
 
-    return (
-        <form onSubmit={handleSubmit} className="container mt-4 p-4 border rounded shadow-sm bg-light">
-            <h4 className="mb-4">Flight Information</h4>
+  useEffect(() => {
+    fetchAirportsData();
+  }, []);
 
-            {/* Flight Date */}
-            <div className="form-group">
-                <label htmlFor="date">Flight Date</label>
-                <input
-                    type="date"
-                    className="form-control"
-                    id="date"
-                    name="date"
-                    value={inputs.date}
-                    onChange={handleDateChange}
-                    required
-                />
-            </div>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-            {/* Origin Airport */}
-            <div className="form-group">
-                <label htmlFor="originAirport">Origin Airport</label>
-                <input
-                    type="text"
-                    className={`form-control ${errors.originAirport ? 'is-invalid' : ''}`}
-                    id="originAirport"
-                    name="originAirport"
-                    value={inputs.originAirport}
-                    onChange={handleChange}
-                    placeholder="Enter origin airport IATA code"
-                    required
-                />
-                {errors.originAirport && <div className="invalid-feedback">{errors.originAirport}</div>}
-            </div>
+    const departureTrimmed = departure.trim().toUpperCase();
+    const arrivalTrimmed = arrival.trim().toUpperCase();
 
-            {/* Destination Airport */}
-            <div className="form-group">
-                <label htmlFor="destinationAirport">Destination Airport</label>
-                <input
-                    type="text"
-                    className={`form-control ${errors.destinationAirport ? 'is-invalid' : ''}`}
-                    id="destinationAirport"
-                    name="destinationAirport"
-                    value={inputs.destinationAirport}
-                    onChange={handleChange}
-                    placeholder="Enter destination airport IATA code"
-                    required
-                />
-                {errors.destinationAirport && <div className="invalid-feedback">{errors.destinationAirport}</div>}
-            </div>
+    if (!iataRegex.test(departureTrimmed) || !iataRegex.test(arrivalTrimmed)) {
+      alert("Please enter valid IATA codes (3 uppercase letters).");
+      setLoading(false);
+      return;
+    }
 
-            {/* Scheduled Departure Time */}
-            <div className="form-group">
-                <label htmlFor="scheduledDeparture">Scheduled Departure Time</label>
-                <input
-                    type="time"
-                    className="form-control"
-                    id="scheduledDeparture"
-                    name="scheduledDeparture"
-                    value={inputs.scheduledDeparture}
-                    onChange={handleChange}
-                    required
-                />
-            </div>
+    const departureCoords = airports[departureTrimmed];
+    const arrivalCoords = airports[arrivalTrimmed];
 
-            {/* Scheduled Arrival Time */}
-            <div className="form-group">
-                <label htmlFor="scheduledArrival">Scheduled Arrival Time</label>
-                <input
-                    type="time"
-                    className="form-control"
-                    id="scheduledArrival"
-                    name="scheduledArrival"
-                    value={inputs.scheduledArrival}
-                    onChange={handleChange}
-                    required
-                />
-            </div>
+    if (!departureCoords || !arrivalCoords) {
+      alert("Invalid IATA code entered.");
+      setLoading(false);
+      return;
+    }
 
-            {/* Departure Delay */}
-            <div className="form-group">
-                <label htmlFor="departureDelay">Departure Delay (in minutes)</label>
-                <input
-                    type="number"
-                    className="form-control"
-                    id="departureDelay"
-                    name="departureDelay"
-                    value={inputs.departureDelay}
-                    onChange={handleChange}
-                    placeholder="Enter departure delay"
-                    required
-                />
-            </div>
-            <button type="submit" className="btn btn-primary mt-3">Predict</button>
+    setFlightPath([departureCoords, arrivalCoords]);
+
+    setConfirmation({
+      departure: departureTrimmed,
+      arrival: arrivalTrimmed,
+      departureTime: formatDateTime(departureTime),
+      arrivalTime: formatDateTime(arrivalTime),
+    });
+
+    setLoading(false);
+  };
+
+  const formatDateTime = (datetime) => {
+    const date = new Date(datetime);
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  };
+
+  return (
+    <Container>
+      <Paper elevation={3} style={{ padding: '20px', marginTop: '20px' }}>
+        <Typography variant="h4" gutterBottom>
+          Search Flights
+        </Typography>
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                label="Departure Airport (IATA code)"
+                value={departure}
+                onChange={(e) => setDeparture(e.target.value.toUpperCase())}
+                variant="outlined"
+                fullWidth
+                error={!iataRegex.test(departure)}
+                helperText={!iataRegex.test(departure) ? "Invalid IATA code" : ""}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                label="Arrival Airport (IATA code)"
+                value={arrival}
+                onChange={(e) => setArrival(e.target.value.toUpperCase())}
+                variant="outlined"
+                fullWidth
+                error={!iataRegex.test(arrival)}
+                helperText={!iataRegex.test(arrival) ? "Invalid IATA code" : ""}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                label="Scheduled Departure Time"
+                type="datetime-local"
+                value={departureTime}
+                onChange={(e) => setDepartureTime(e.target.value)}
+                variant="outlined"
+                fullWidth
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                label="Scheduled Arrival Time"
+                type="datetime-local"
+                value={arrivalTime}
+                onChange={(e) => setArrivalTime(e.target.value)}
+                variant="outlined"
+                fullWidth
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Button 
+                type="submit" 
+                variant="contained" 
+                color="primary" 
+                fullWidth
+                disabled={loading}
+              >
+                {loading ? <CircularProgress size={24} /> : "Search"}
+              </Button>
+            </Grid>
+          </Grid>
         </form>
-    );
+
+        {confirmation && (
+          <Paper elevation={2} style={{ marginTop: '20px', padding: '10px' }}>
+            <Typography variant="h6">Confirmation Details</Typography>
+            <Typography>Departure Airport: {confirmation.departure}</Typography>
+            <Typography>Arrival Airport: {confirmation.arrival}</Typography>
+            <Typography>Scheduled Departure Time: {confirmation.departureTime}</Typography>
+            <Typography>Scheduled Arrival Time: {confirmation.arrivalTime}</Typography>
+          </Paper>
+        )}
+      </Paper>
+
+      {flightPath.length > 0 && (
+        <Paper elevation={3} style={{ height: "400px", marginTop: "20px" }}>
+          <FlightPathChart flightPath={flightPath} />
+        </Paper>
+      )}
+    </Container>
+  );
 };
 
-export default InputForm;
+export default FlightSearch;
