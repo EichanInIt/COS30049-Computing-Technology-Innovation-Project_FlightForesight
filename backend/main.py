@@ -1,59 +1,75 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
-import os
+from typing import List
 
-app = FastAPI()
+app = FastAPI(title="Airport API", description="API for managing and retrieving airport data", version="1.0")
 
-# Load airport data from CSV
-DATA_FILE = "./data.csv"
-airport_data = {}
+# Load airport data from CSV into a DataFrame
+airport_data = pd.read_csv("C:/Users/nguye/Downloads/w/COS30049-Computing-Technology-Innovation-Project_FlightForesight/FlightForesight/src/components/data.csv")
+airport_data.columns = ['name', 'latitude', 'longitude', 'iata']  # Ensure proper column names
 
-def load_airport_data():
+class Airport(BaseModel):
+    """Schema for airport data."""
+    name: str
+    latitude: float
+    longitude: float
+    iata: str
+
+@app.get("/airports/", response_model=List[Airport], summary="Get all airports")
+async def get_airports():
+    """
+    Get a list of all airports.
+
+    - **response**: List of airports
+    """
+    return airport_data.to_dict(orient='records')
+
+@app.get("/airports/{iata_code}", response_model=Airport, summary="Get airport by IATA code")
+async def get_airport(iata_code: str):
+    """
+    Get details of a specific airport by IATA code.
+
+    - **iata_code**: IATA code of the airport
+    - **response**: Details of the specified airport
+    """
+    airport = airport_data[airport_data['iata'].str.upper() == iata_code.upper()]
+    if airport.empty:
+        raise HTTPException(status_code=404, detail="Airport not found")
+    return airport.iloc[0].to_dict()
+
+@app.post("/airports/", response_model=Airport, summary="Add a new airport")
+async def add_airport(airport: Airport):
+    """
+    Add a new airport.
+
+    - **airport**: The airport details to be added
+    - **response**: The added airport details
+    """
     global airport_data
-    df = pd.read_csv(DATA_FILE)
-    for index, row in df.iterrows():
-        airport_data[row['iata'].strip()] = {
-            "name": row['name'],
-            "lat": row['latitude'],
-            "lon": row['longitude']
-        }
-
-load_airport_data()
-
-# Define request and response models
-class FlightRequest(BaseModel):
-    departure: str
-    arrival: str
-    departureTime: str
-    arrivalTime: str
-
-class FlightResponse(BaseModel):
-    confirmation: dict
-    flightPath: list
-
-@app.post("/search-flight", response_model=FlightResponse)
-async def search_flight(request: FlightRequest):
-    departure = request.departure.strip().upper()
-    arrival = request.arrival.strip().upper()
-
-    departure_airport = airport_data.get(departure)
-    arrival_airport = airport_data.get(arrival)
-
-    if not departure_airport or not arrival_airport:
-        raise HTTPException(status_code=400, detail="Invalid IATA codes")
-
-    flight_path = [departure_airport, arrival_airport]
-
-    confirmation = {
-        "departure": departure,
-        "arrival": arrival,
-        "departureTime": request.departureTime,
-        "arrivalTime": request.arrivalTime,
+    new_row = {
+        "name": airport.name,
+        "latitude": airport.latitude,
+        "longitude": airport.longitude,
+        "iata": airport.iata.upper(),
     }
+    airport_data = airport_data.append(new_row, ignore_index=True)
+    return new_row
 
-    return FlightResponse(confirmation=confirmation, flightPath=flight_path)
+@app.delete("/airports/{iata_code}", summary="Delete an airport by IATA code")
+async def delete_airport(iata_code: str):
+    """
+    Delete an airport by IATA code.
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=5000)
+    - **iata_code**: IATA code of the airport to be deleted
+    - **response**: Confirmation of deletion
+    """
+    global airport_data
+    airport = airport_data[airport_data['iata'].str.upper() == iata_code.upper()]
+    if airport.empty:
+        raise HTTPException(status_code=404, detail="Airport not found")
+    airport_data = airport_data[airport_data['iata'].str.upper() != iata_code.upper()]
+    return {"detail": f"Airport {iata_code} deleted"}
+
+# To run the FastAPI app, use:
+# uvicorn main:app --reload

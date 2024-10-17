@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Papa from "papaparse";
 import FlightPathChart from "./FlightPathChart"; // Import the FlightPathChart component
 import { 
   TextField, 
@@ -24,25 +23,24 @@ const FlightSearch = () => {
   const iataRegex = /^[A-Z]{3}$/;
 
   const fetchAirportsData = async () => {
-    const response = await fetch('./data.csv');
-    const reader = response.body.getReader();
-    const result = await reader.read();
-    const decodedString = new TextDecoder("utf-8").decode(result.value);
-
-    Papa.parse(decodedString, {
-      header: true,
-      complete: (results) => {
-        const airportData = {};
-        results.data.forEach((airport) => {
-          airportData[airport.iata.trim()] = {
-            name: airport.name,
-            lat: parseFloat(airport.latitude),
-            lon: parseFloat(airport.longitude),
-          };
-        });
-        setAirports(airportData);
-      },
-    });
+    try {
+      const response = await fetch('http://localhost:8000/airports/');
+      if (!response.ok) throw new Error("Network response was not ok");
+      
+      const data = await response.json();
+      const airportData = {};
+      
+      data.forEach((airport) => {
+        airportData[airport.iata.trim()] = {
+          name: airport.name,
+          lat: parseFloat(airport.latitude),
+          lon: parseFloat(airport.longitude),
+        };
+      });
+      setAirports(airportData);
+    } catch (error) {
+      console.error("Error fetching airports data:", error);
+    }
   };
 
   useEffect(() => {
