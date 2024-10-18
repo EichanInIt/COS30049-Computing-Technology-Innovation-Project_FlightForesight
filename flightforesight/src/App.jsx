@@ -5,7 +5,7 @@ import './App.css';
 import CustomNavbar from './components/Navbar';
 import About from './components/About';
 import Footer from './components/Footer';
-import InputForm from './components/InputForm'; // Assuming this is the Home page component
+import InputForm from './components/FlightSearch'; // Assuming this is the Home page component
 
 function App() {
   return (
