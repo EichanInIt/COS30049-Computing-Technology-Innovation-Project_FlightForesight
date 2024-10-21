@@ -150,12 +150,12 @@ const Fare = () => {
               <FormControl fullWidth className="custom-textfield" required>
                 <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Departure Time</InputLabel>
                 <Select value={departureTime} onChange={(e) => setDepartureTime(e.target.value)}>
-                  <MenuItem value="early-morning">Early Morning</MenuItem>
-                  <MenuItem value="morning">Morning</MenuItem>
-                  <MenuItem value="afternoon">Afternoon</MenuItem>
-                  <MenuItem value="evening">Evening</MenuItem>
-                  <MenuItem value="night">Night</MenuItem>
-                  <MenuItem value="late-night">Late Night</MenuItem>
+                  <MenuItem value="early-morning">Early Morning (12:00 AM - 6:00 AM)</MenuItem>
+                  <MenuItem value="morning">Morning (6:00 AM - 12:00 PM)</MenuItem>
+                  <MenuItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</MenuItem>
+                  <MenuItem value="evening">Evening (6:00 PM - 9:00 PM)</MenuItem>
+                  <MenuItem value="night">Night (9:00 PM - 12:00 AM)</MenuItem>
+                  <MenuItem value="late-night">Late Night (12:00 AM - 3:00 AM)</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -177,12 +177,12 @@ const Fare = () => {
               <FormControl fullWidth className="custom-textfield" required>
                 <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Arrival Time</InputLabel>
                 <Select value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)}>
-                  <MenuItem value="early-morning">Early Morning</MenuItem>
-                  <MenuItem value="morning">Morning</MenuItem>
-                  <MenuItem value="afternoon">Afternoon</MenuItem>
-                  <MenuItem value="evening">Evening</MenuItem>
-                  <MenuItem value="night">Night</MenuItem>
-                  <MenuItem value="late-night">Late Night</MenuItem>
+                  <MenuItem value="early-morning">Early Morning (12:00 AM - 6:00 AM)</MenuItem>
+                  <MenuItem value="morning">Morning (6:00 AM - 12:00 PM)</MenuItem>
+                  <MenuItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</MenuItem>
+                  <MenuItem value="evening">Evening (6:00 PM - 9:00 PM)</MenuItem>
+                  <MenuItem value="night">Night (9:00 PM - 12:00 AM)</MenuItem>
+                  <MenuItem value="late-night">Late Night (12:00 AM - 3:00 AM)</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
