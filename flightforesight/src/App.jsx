@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import './App.css';
 import CustomNavbar from './components/Navbar';
-import About from './components/About';
 import Footer from './components/Footer';
 import Home from './components/home'; 
 import Fare from './components/Fare';
@@ -16,7 +15,6 @@ function App() {
         <main className="content">
           <Routes>
             <Route path="/" element={<Home />} /> {/* Home route */}
-            <Route path="/about" element={<About />} />
             <Route path="/fare" element={<Fare />} />
             <Route path="/delay" element={<Delay />} />
           </Routes>

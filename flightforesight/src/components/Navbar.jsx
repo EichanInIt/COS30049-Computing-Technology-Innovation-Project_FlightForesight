@@ -17,9 +17,6 @@ function CustomNavbar() {
           <Nav.Link as={Link} to="/" className="btn btn-outline-primary navbar-button">
             Home
           </Nav.Link>
-          <Nav.Link as={Link} to="/about" className="btn btn-outline-primary navbar-button">
-            About
-          </Nav.Link>
           <Nav.Link as={Link} to="/fare" className="btn btn-outline-primary navbar-button">
             Fare
           </Nav.Link>
