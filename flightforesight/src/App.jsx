@@ -4,7 +4,9 @@ import './App.css';
 import CustomNavbar from './components/Navbar';
 import About from './components/About';
 import Footer from './components/Footer';
-import Home from './components/home';  // Import Home.jsx
+import Home from './components/home'; 
+import Fare from './components/Fare';
+import Delay from './components/Delay';
 
 function App() {
   return (
@@ -15,7 +17,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} /> {/* Home route */}
             <Route path="/about" element={<About />} />
-            {/* Add other routes here if needed */}
+            <Route path="/fare" element={<Fare />} />
+            <Route path="/delay" element={<Delay />} />
           </Routes>
         </main>
         <Footer />

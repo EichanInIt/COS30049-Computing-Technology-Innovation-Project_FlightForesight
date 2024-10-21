@@ -20,6 +20,12 @@ function CustomNavbar() {
           <Nav.Link as={Link} to="/about" className="btn btn-outline-primary navbar-button">
             About
           </Nav.Link>
+          <Nav.Link as={Link} to="/fare" className="btn btn-outline-primary navbar-button">
+            Fare
+          </Nav.Link>
+          <Nav.Link as={Link} to="/delay" className="btn btn-outline-primary navbar-button">
+            Delay
+          </Nav.Link>
           <Nav.Link href="https://github.com/EichanInIt/COS30049-Computing-Technology-Innovation-Project_FlightForesight" target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary navbar-button">
             Github
           </Nav.Link>
