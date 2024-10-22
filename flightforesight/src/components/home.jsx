@@ -35,7 +35,7 @@ function Home() {
     },
     {
       name: 'Melvin Nguyen',
-      dob: 'August 9, 1999',
+      dob: 'August 1, 2001',
       description: 'Project manager with a focus on machine learning and leadership.',
       university: 'Swinburne University Of Technology',
       role: 'Team Leader',
