@@ -16,6 +16,7 @@ import {
 import { motion } from "framer-motion";
 import FlightPath from './FlightPath';
 import FlightTable from "./FlightTable";
+import axios from 'axios';
 
 const Fare = () => {
   const [sourceCity, setSourceCity] = useState("");
@@ -62,25 +63,48 @@ const Fare = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
-    const source_city = airports.find((airport) => airport.city === sourceCity);
-    const destination_city = airports.find((airport) => airport.city === destinationCity);
-
+  
+    const source_city = airports.find((airport) => airport.iata === sourceCity);
+    const destination_city = airports.find((airport) => airport.iata === destinationCity);
+  
+    if (!source_city || !destination_city) {
+      alert("Please select valid airports for both source and destination.");
+      setLoading(false);
+      return;
+    }
+  
     if (sourceCity === destinationCity) {
       alert("Please select different cities for source and destination.");
       setLoading(false);
       return;
     }
-
+  
     const data = {
       airline: selectedAirline,
-      sourceCity: source_city.city,
+      sourceCity: source_city.city,  // Using the full city name from the selected IATA code
       departureTime,
       stops,
       arrivalTime,
-      destinationCity: destination_city.city,
-      class: Class,
+      destinationCity: destination_city.city,  // Using the full city name from the selected IATA code
+      flightClass: Class,
     };
+
+    console.log("Submitting Data:", data);
+
+    // try {
+    //   const response = await axios.post("http://localhost:8000/predict/", data);
+    //   console.log("Predicted Fare:", response.data.predicted_fare);
+
+    //   // Update state with the confirmation and predicted fare
+    //   setConfirmation({ ...data, fare: response.data.predicted_fare });
+    //   setFlightTable(data);
+    //   setFlightPath([source_city, destination_city]);
+    //   setPathVisible(true);
+    // } catch (error) {
+    //     console.error("Error predicting fare:", error);
+    // } finally {
+    //     setLoading(false);
+    // }
 
     console.log("Submitted Data:", data);
     setConfirmation(data);
@@ -141,7 +165,7 @@ const Fare = () => {
                     required
                   />
                 )}
-                onChange={(event, newValue) => setSourceCity(newValue ? newValue.city : "")}
+                onChange={(event, newValue) => setSourceCity(newValue ? newValue.iata : "")}
               />
             </Grid>
 
@@ -204,7 +228,7 @@ const Fare = () => {
                     required
                   />
                 )}
-                onChange={(event, newValue) => setDestinationCity(newValue ? newValue.city : "")}
+                onChange={(event, newValue) => setDestinationCity(newValue ? newValue.iata : "")}
               />
             </Grid>
 
@@ -246,7 +270,7 @@ const Fare = () => {
         {/* Confirmation */}
         {confirmation && (
           <Typography variant="h6" style={{ marginTop: "20px" }}>
-            {`Flight from ${confirmation.sourceCity} to ${confirmation.destinationCity} with ${confirmation.airline} (${confirmation.class}).`}<br />
+            {`Flight from ${confirmation.sourceCity} to ${confirmation.destinationCity} with ${confirmation.airline} (${confirmation.flightClass}).`}<br />
             {`Departure time: ${confirmation.departureTime}, Arrival time: ${confirmation.arrivalTime}, Stops: ${confirmation.stops}.`}<br />
           </Typography>
         )}

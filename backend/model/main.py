@@ -1,69 +1,95 @@
-# from fastapi import FastAPI, HTTPException
-# from pydantic import BaseModel
-# import pickle
-# import pandas as pd
-# import numpy as np
-# from typing import Optional
-# from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import joblib
+import numpy as np
+import pandas as pd
+import os
+import logging
+from sklearn.preprocessing import LabelEncoder
 
-# app = FastAPI()
+# Initialize FastAPI app
+app = FastAPI()
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # Allows all origins
-#     allow_credentials=True,
-#     allow_methods=["*"],  # Allows all methods (POST, GET, OPTIONS, etc.)
-#     allow_headers=["*"],  # Allows all headers
-# )
+# CORS middleware to allow communication with frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Update with frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# # Load the pre-trained model
-# model = pickle.load(open('./model/rf_regressor.pkl', 'rb'))
+# Load the model and label encoders
+try:
+    model_path = os.path.join("model", "rf_regressor.pkl")
+    model = joblib.load(model_path)
+except Exception as e:
+    logging.error(f"Error loading model: {str(e)}")
+    raise RuntimeError("Model file not found. Ensure 'rf_regressor.pkl' is available.")
 
-# # Define a data model for incoming requests
-# class FlightFareRequest(BaseModel):
-#     airline: str
-#     sourceCity: str
-#     departureTime: str
-#     stops: str
-#     arrivalTime: str
-#     destinationCity: str
-#     class_type: str  # renamed to avoid using Python's reserved keyword 'class'
+# Request data model for flight fare prediction
+class FlightFareRequest(BaseModel):
+    airline: str
+    sourceCity: str
+    destinationCity: str
+    departureTime: str
+    arrivalTime: str
+    stops: str
+    flightClass: str
 
-# # Function to preprocess input data
-# def preprocess_data(data):
-#     df = pd.DataFrame([data.dict()])
+# Feature transformation function based on the training process
+def transform_features(data: FlightFareRequest):
+    """
+    This function transforms the input data into the feature set used during model training.
+    It applies label encoding to categorical variables as done during training.
+    """
+    # Create a DataFrame from the input data
+    input_df = pd.DataFrame({
+        'airline': "Air Italy",
+        'source_city': "Madang",
+        'destination_city': "Wewak",
+        'departure_time': "Morning",
+        'arrival_time': "Evening",
+        'stops': [data.stops],
+        'class': [data.flightClass],
+    })
     
-#     label_columns = ['airline', 'source_city', 'departure_time', 'stops', 'arrival_time', 'destination_city', 'class']
-#     le = LabelEncoder()
-
-#     for column in label_columns:
-#         if data[column].dtype == 'object':  # Check if the column is categorical
-#             data[column] = le.fit_transform(data[column])
+    # Apply label encoding to categorical columns (same as done during training)
+    label_columns = ['airline', 'source_city', 'departure_time', 'stops', 'arrival_time', 'destination_city', 'class']
+    le = LabelEncoder()
     
-#     return df
+    for column in label_columns:
+        if input_df[column].dtype == 'object':
+            input_df[column] = le.fit_transform(input_df[column])
 
-# @app.post("/predict")
-# async def predict_flight_fare(fare_request: FlightFareRequest):
-#     # Preprocess the incoming data
-#     processed_data = preprocess_data(fare_request)
+    # Return the feature set as a NumPy array
+    return input_df.values
+
+# Prediction endpoint
+@app.post("/predict/")
+async def predict_flight_fare(flight_data: FlightFareRequest):
+    try:
+        # Step 1: Transform input data into model features
+        features = transform_features(flight_data)
+
+        # Step 2: Perform prediction using the loaded model
+        predicted_fare = model.predict(features)
+
+        # Step 3: Return the predicted fare (rounded to 2 decimal places)
+        return {"predicted_fare": round(predicted_fare[0], 2)}
     
-#     # Make the prediction using the pre-loaded model
-#     try:
-#         prediction = model.predict(processed_data)
-#         predicted_fare = np.round(prediction[0], 2)
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail="Prediction failed: " + str(e))
+    except Exception as e:
+        logging.error(f"Prediction error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error predicting flight fare")
 
-#     # Return the predicted fare along with flight path info
-#     return {
-#         "predicted_fare": predicted_fare,
-#         "flight_path": {
-#             "sourceCity": fare_request.sourceCity,
-#             "destinationCity": fare_request.destinationCity
-#         }
-#     }
+# Root endpoint 
+@app.get("/")
+async def root():
+    return {"message": "Flight Fare Prediction API is running"}
 
-# # Run the FastAPI server using Uvicorn
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="127.0.0.1", port=8000)
+# Main execution
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
