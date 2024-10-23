@@ -284,7 +284,7 @@ const Fare = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 type="number"
-                label="Departure Delay"
+                label="Departure Delay (minutes)"
                 variant="outlined"
                 fullWidth
                 required
@@ -301,7 +301,7 @@ const Fare = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 type="number"
-                label="Air Time"
+                label="Air Time (minutes)"
                 variant="outlined"
                 fullWidth
                 required
