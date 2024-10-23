@@ -69,14 +69,8 @@ const Fare = () => {
     const source_city = airports.find((airport) => airport.iata === sourceCity);
     const destination_city = airports.find((airport) => airport.iata === destinationCity);
   
-    if (!source_city || !destination_city) {
-      alert("Please select valid airports for both source and destination.");
-      setLoading(false);
-      return;
-    }
-  
-    if (sourceCity === destinationCity) {
-      alert("Please select different cities for source and destination.");
+    if (source_city.city === destination_city.city) {
+      alert("Please select different cities.");
       setLoading(false);
       return;
     }
@@ -107,11 +101,11 @@ const Fare = () => {
   
     const data = {
       airline: selectedAirline,
-      sourceCity: source_city.city,  // Using the full city name from the selected IATA code
+      sourceCity: source_city.city,  
       departureTime,
       stops,
       arrivalTime,
-      destinationCity: destination_city.city,  // Using the full city name from the selected IATA code
+      destinationCity: destination_city.city, 
       flightClass: Class,
       duration: parseFloat(duration_in_hours),
       days_left: parseInt(days_before_departure)
@@ -138,17 +132,6 @@ const Fare = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDateTime = (datetime) => {
-    const date = new Date(datetime);
-    return new Intl.DateTimeFormat("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
   };
 
   return (
@@ -342,9 +325,9 @@ const Fare = () => {
         {confirmation && (
           <Typography variant="h6" style={{ marginTop: "20px" }}>
             {`Flight from ${confirmation.sourceCity} to ${confirmation.destinationCity} with ${confirmation.airline} (${confirmation.flightClass}).`}<br />
-            {`Departure time: ${confirmation.departureTime}, Arrival time: ${confirmation.arrivalTime}, Stops: ${confirmation.stops}.`}<br />
+            {`Departure time: ${confirmation.departureTime}. Arrival time: ${confirmation.arrivalTime}. Stops: ${confirmation.stops}.`}<br />
             {`Flight duration: ${confirmation.duration.toFixed(2)} hours.`}<br />
-            {`Days left before departure: ${confirmation.days_left} days.`}<br />
+            {`Days left before departure date: ${confirmation.days_left} days.`}<br />
             {`Predicted Fare: $${confirmation.fare}`}
           </Typography>
         )}

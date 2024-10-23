@@ -17,7 +17,7 @@ function Home() {
   const teamMembers = [
     {
       name: 'Justin Nguyen',
-      dob: 'January 15, 2005',
+      dob: 'September 18, 2005',
       description: 'A dedicated software developer and technical provider.',
       university: 'Swinburne University Of Technology',
       role: 'Software Developer',

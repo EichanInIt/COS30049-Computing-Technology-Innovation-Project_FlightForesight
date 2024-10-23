@@ -18,7 +18,7 @@ const FlightTable = ({ confirmation }) => {
             "Destination City",
             "Departure Time",
             "Arrival Time",
-            "Price"
+            "Price (AUD)"
           ],
           align: "center",
           line: { width: 1, color: 'black' },

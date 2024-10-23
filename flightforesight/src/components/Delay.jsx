@@ -15,24 +15,24 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import FlightPath from './FlightPath';
-import FlightTable from "./FlightTable";
-import axios from 'axios';
+import FlightTableForDelay from "./FlightTableForDelay";
 
-const Delay = () => {
-  const [sourceCity, setSourceCity] = useState("");
-  const [departureTime, setDepartureTime] = useState("");
-  const [stops, setStops] = useState("");
-  const [arrivalTime, setArrivalTime] = useState("");
-  const [destinationCity, setDestinationCity] = useState("");
-  const [Class, setFlightClass] = useState("");
+const Fare = () => {
+  const [month, setMonth] = useState("");
+  const [day, setDay] = useState("");
+  const [daysofweek, setDaysOfWeek] = useState("");
+  const [originAirport, setOriginAirport] = useState("");
+  const [destinationAirport, setDestinationAirport] = useState("");
+  const [scheduledDeparture, setScheduledDeparture] = useState("");
+  const [scheduledArrival, setScheduledArrival] = useState("");
+  const [departureDelay, setDepartureDelay] = useState("");
+  const [airTime, setAirTime] = useState("");
   const [airports, setAirports] = useState([]);
-  const [airline, setAirlines] = useState([]);
-  const [selectedAirline, setSelectedAirline] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
   const [flightPath, setFlightPath] = useState([]);
   const [pathVisible, setPathVisible] = useState(false);
-  const [flightTable, setFlightTable] = useState(null); // State to store flight details for the table
+  const [flightTable, setFlightTable] = useState(null);
 
   // Fetch airports and airlines
   const fetchAirportsData = async () => {
@@ -45,53 +45,96 @@ const Delay = () => {
     }
   };
 
-  const fetchAirlinesData = async () => {
-    try {
-      const response = await fetch("airlines.json"); // Replace with actual path
-      const data = await response.json();
-      setAirlines(data);
-    } catch (error) {
-      console.error("Error fetching airlines data:", error);
-    }
-  };
-
   useEffect(() => {
     fetchAirportsData();
-    fetchAirlinesData();
   }, []);
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const toRadians = (degrees) => degrees * (Math.PI / 180);  // Convert degrees to radians
+    const R = 6371; // Radius of the Earth in kilometers
+
+    const φ1 = toRadians(lat1);
+    const φ2 = toRadians(lat2);
+    const Δφ = toRadians(lat2 - lat1);
+    const Δλ = toRadians(lon2 - lon1);
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in kilometers
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const source_city = airports.find((airport) => airport.city === sourceCity);
-    const destination_city = airports.find((airport) => airport.city === destinationCity);
-
-    if (sourceCity === destinationCity) {
-      alert("Please select different cities for source and destination.");
+    if (originAirport === destinationAirport) {
+      alert("Please select different airports.");
       setLoading(false);
       return;
     }
 
+    // Convert the date and time inputs to Date objects
+    const ScheduledDepartureTime = new Date(scheduledDeparture);
+    const ScheduledArrivalTime = new Date(scheduledArrival);
+
+    if (ScheduledArrivalTime <= ScheduledDepartureTime) {
+      alert("Arrival time must be after the departure time. Please choose again.");
+      setLoading(false);
+      return;
+    }
+
+    // Calculate the days left before departure
+    const today = new Date(); // Get today's date
+
+    if (ScheduledDepartureTime <= today) {
+      alert("The day you bought the ticket must be before the departure time. Please choose again.");
+      setLoading(false);
+      return;
+    }
+
+    // Calculate the distance using lat/lon of the origin and destination airports
+    const distance = calculateDistance(
+      originAirport.latitude,
+      originAirport.longitude,
+      destinationAirport.latitude,
+      destinationAirport.longitude
+    );
+
     const data = {
-      airline: selectedAirline,
-      sourceCity: source_city.city,
-      departureTime,
-      stops,
-      arrivalTime,
-      destinationCity: destination_city.city,
-      flightClass: Class,
+      month,
+      day,
+      daysofweek,
+      originAirport: originAirport.name,
+      destinationAirport: destinationAirport.name,
+      scheduledDeparture,
+      scheduledArrival,
+      departureDelay,
+      airTime,
+      distance: distance
     };
 
-    console.log("Submitting Data:", data);
+      console.log("Submitting Data:", data);
+      setConfirmation(data);
+      setFlightPath([originAirport, destinationAirport]); 
+      setPathVisible(true);
+      setFlightTable(data);
+      setLoading(false); 
+  };
 
-    setConfirmation(data);
-    setFlightTable(data);
-
-    setFlightPath([source_city, destination_city]);
-    setPathVisible(true);
-
-    setLoading(false);
+  const formatDateTime = (isoString) => {
+    const date = new Date(isoString);
+    const options = {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
+    };
+    return new Intl.DateTimeFormat('en-GB', options).format(date);
   };
 
   return (
@@ -101,40 +144,73 @@ const Delay = () => {
         style={{ padding: "20px", marginTop: "20px", boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)" }}
       >
         <Typography variant="h4" gutterBottom sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>
-          Flight Fare Prediction
+          Flight Delay Prediction
         </Typography>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            {/* Airline */}
+            {/* Month */}
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth className="custom-textfield" required>
+                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Month</InputLabel>
+                <Select value={month} onChange={(e) => setMonth(e.target.value)}>
+                  <MenuItem value="1">January</MenuItem>
+                  <MenuItem value="2">February</MenuItem>
+                  <MenuItem value="3">March</MenuItem>
+                  <MenuItem value="4">April</MenuItem>
+                  <MenuItem value="5">May</MenuItem>
+                  <MenuItem value="6">June</MenuItem>
+                  <MenuItem value="7">July</MenuItem>
+                  <MenuItem value="8">August</MenuItem>
+                  <MenuItem value="9">September</MenuItem>
+                  <MenuItem value="10">October</MenuItem>
+                  <MenuItem value="11">November</MenuItem>
+                  <MenuItem value="12">December</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Day */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                type="number"
+                label="Day"
+                variant="outlined"
+                fullWidth
+                required
+                InputLabelProps={{
+                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                }}
+                className="custom-textfield"
+                value={day}
+                onChange={(e) => setDay(e.target.value)}
+              />
+            </Grid>
+
+            {/* Days Of Week */}
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth className="custom-textfield" required>
+                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Days Of Week</InputLabel>
+                <Select value={daysofweek} onChange={(e) => setDaysOfWeek(e.target.value)}>
+                  <MenuItem value="1">Sunday</MenuItem>
+                  <MenuItem value="2">Monday</MenuItem>
+                  <MenuItem value="3">Tuesday</MenuItem>
+                  <MenuItem value="4">Wednesday</MenuItem>
+                  <MenuItem value="5">Thursday</MenuItem>
+                  <MenuItem value="6">Friday</MenuItem>
+                  <MenuItem value="7">Saturday</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Origin Airport */}
             <Grid item xs={12} md={6}>
               <Autocomplete
-                options={airline}
+                options={airports}
                 getOptionLabel={(option) => `${option.name} (${option.iata})`}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Airline"
-                    variant="outlined"
-                    InputLabelProps={{
-                      style: { color: 'var(--primary-color)', fontWeight: 'bold' },
-                    }}
-                    className="custom-textfield" 
-                    required
-                  />
-                )}
-                onChange={(event, newValue) => setSelectedAirline(newValue ? newValue.name : "")}
-              />
-            </Grid>
-
-            {/* Source City */}
-            <Grid item xs={12} md={6}>
-              <Autocomplete
-                options={airports}
-                getOptionLabel={(option) => `${option.city} - ${option.name} (${option.iata})`}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Source City"
+                    label="Origin Airport"
                     variant="outlined"
                     InputLabelProps={{
                       style: { color: 'var(--primary-color)', fontWeight: 'bold' },
@@ -143,61 +219,19 @@ const Delay = () => {
                     required
                   />
                 )}
-                onChange={(event, newValue) => setSourceCity(newValue ? newValue.city : "")}
+                onChange={(event, newValue) => setOriginAirport(newValue)}
               />
             </Grid>
 
-            {/* Departure Time */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Departure Time</InputLabel>
-                <Select value={departureTime} onChange={(e) => setDepartureTime(e.target.value)}>
-                  <MenuItem value="early-morning">Early Morning (3:00 AM - 6:00 AM)</MenuItem>
-                  <MenuItem value="morning">Morning (6:00 AM - 12:00 PM)</MenuItem>
-                  <MenuItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</MenuItem>
-                  <MenuItem value="evening">Evening (6:00 PM - 9:00 PM)</MenuItem>
-                  <MenuItem value="night">Night (9:00 PM - 12:00 AM)</MenuItem>
-                  <MenuItem value="late-night">Late Night (12:00 AM - 3:00 AM)</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Stops */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Stops</InputLabel>
-                <Select value={stops} onChange={(e) => setStops(e.target.value)}>
-                  <MenuItem value="zero">Direct</MenuItem>
-                  <MenuItem value="one">One Stop</MenuItem>
-                  <MenuItem value="two-or-more">Two Or More Stops</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Arrival Time */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Arrival Time</InputLabel>
-                <Select value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)}>
-                  <MenuItem value="early-morning">Early Morning (3:00 AM - 6:00 AM)</MenuItem>
-                  <MenuItem value="morning">Morning (6:00 AM - 12:00 PM)</MenuItem>
-                  <MenuItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</MenuItem>
-                  <MenuItem value="evening">Evening (6:00 PM - 9:00 PM)</MenuItem>
-                  <MenuItem value="night">Night (9:00 PM - 12:00 AM)</MenuItem>
-                  <MenuItem value="late-night">Late Night (12:00 AM - 3:00 AM)</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Destination City */}
+            {/* Destination Airport */}
             <Grid item xs={12} md={6}>
               <Autocomplete
                 options={airports}
-                getOptionLabel={(option) => `${option.city} - ${option.name} (${option.iata})`}
+                getOptionLabel={(option) => `${option.name} (${option.iata})`}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Destination City"
+                    label="Destination Airport"
                     variant="outlined"
                     InputLabelProps={{
                       style: { color: 'var(--primary-color)', fontWeight: 'bold' },
@@ -206,19 +240,78 @@ const Delay = () => {
                     required
                   />
                 )}
-                onChange={(event, newValue) => setDestinationCity(newValue ? newValue.city : "")}
+                onChange={(event, newValue) => setDestinationAirport(newValue)}
               />
             </Grid>
 
-            {/* Flight Class */}
+            {/* Scheduled Departure */}
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Class</InputLabel>
-                <Select value={Class} onChange={(e) => setFlightClass(e.target.value)}>
-                  <MenuItem value="economy">Economy</MenuItem>
-                  <MenuItem value="business">Business</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                type="datetime-local"
+                label="Scheduled Departure"
+                variant="outlined"
+                fullWidth
+                required
+                InputLabelProps={{
+                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                  shrink: true
+                }}
+                className="custom-textfield"
+                value={scheduledDeparture}
+                onChange={(e) => setScheduledDeparture(e.target.value)}
+              />
+            </Grid>
+
+            {/* Scheduled Arrival */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                type="datetime-local"
+                label="Departure Date"
+                variant="outlined"
+                fullWidth
+                required
+                InputLabelProps={{
+                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                  shrink: true
+                }}
+                className="custom-textfield"
+                value={scheduledArrival}
+                onChange={(e) => setScheduledArrival(e.target.value)}
+              />
+            </Grid>
+
+            {/* Departure Delay */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                type="number"
+                label="Departure Delay"
+                variant="outlined"
+                fullWidth
+                required
+                InputLabelProps={{
+                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                }}
+                className="custom-textfield"
+                value={departureDelay}
+                onChange={(e) => setDepartureDelay(e.target.value)}
+              />
+            </Grid>
+
+            {/* Air Time */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                type="number"
+                label="Air Time"
+                variant="outlined"
+                fullWidth
+                required
+                InputLabelProps={{
+                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                }}
+                className="custom-textfield"
+                value={airTime}
+                onChange={(e) => setAirTime(e.target.value)}
+              />
             </Grid>
 
             {/* Submit Button */}
@@ -248,11 +341,15 @@ const Delay = () => {
         {/* Confirmation */}
         {confirmation && (
           <Typography variant="h6" style={{ marginTop: "20px" }}>
-            {`Flight from ${confirmation.sourceCity} to ${confirmation.destinationCity} with ${confirmation.airline} (${confirmation.flightClass}).`}<br />
-            {`Departure time: ${confirmation.departureTime}, Arrival time: ${confirmation.arrivalTime}, Stops: ${confirmation.stops}.`}<br />
+            {`Flight from ${confirmation.originAirport.name} to ${confirmation.destinationAirport.name}`}<br />
+            {`Scheduled Departure: ${formatDateTime(confirmation.scheduledDeparture)}`}<br />
+            {`Scheduled Arrival: ${formatDateTime(confirmation.scheduledArrival)}`}<br />
+            {`Departure Delay: ${confirmation.departureDelay}`}<br />
+            {`Air Time: ${confirmation.airTime}`}<br />
+            {`Distance: ${confirmation.distance.toFixed(2)}`}<br />
           </Typography>
         )}
-        
+
         {/* Flight Path Visualization */}
         {pathVisible && flightPath.length === 2 && (
           <FlightPath flightPath={flightPath} />
@@ -260,12 +357,11 @@ const Delay = () => {
 
         {/* Flight Details Table Visualization */}
         {flightTable && (
-          <FlightTable confirmation={confirmation} />
+          <FlightTableForDelay confirmation={confirmation} />
         )}
       </Paper>
     </Container>
   );
 };
 
-export default Delay;
-
+export default Fare;
