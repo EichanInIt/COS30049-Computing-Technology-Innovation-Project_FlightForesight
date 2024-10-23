@@ -7,20 +7,13 @@ import {
   Button,
   TextField,
   CircularProgress,
-  Autocomplete,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
+  Autocomplete
 } from "@mui/material";
 import { motion } from "framer-motion";
 import FlightPath from './FlightPath';
 import FlightTableForDelay from "./FlightTableForDelay";
 
 const Fare = () => {
-  const [month, setMonth] = useState("");
-  const [day, setDay] = useState("");
-  const [daysofweek, setDaysOfWeek] = useState("");
   const [originAirport, setOriginAirport] = useState("");
   const [destinationAirport, setDestinationAirport] = useState("");
   const [scheduledDeparture, setScheduledDeparture] = useState("");
@@ -103,6 +96,11 @@ const Fare = () => {
       destinationAirport.longitude
     );
 
+    // Extract month, day, and day of week from scheduledDeparture
+    const month = ScheduledDepartureTime.getMonth() + 1; // getMonth() is zero-based
+    const day = ScheduledDepartureTime.getDate();
+    const daysofweek = ScheduledDepartureTime.getDay() + 1; // getDay() is also zero-based (0 for Sunday)
+
     const data = {
       month,
       day,
@@ -148,59 +146,6 @@ const Fare = () => {
         </Typography>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            {/* Month */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Month</InputLabel>
-                <Select value={month} onChange={(e) => setMonth(e.target.value)}>
-                  <MenuItem value="1">January</MenuItem>
-                  <MenuItem value="2">February</MenuItem>
-                  <MenuItem value="3">March</MenuItem>
-                  <MenuItem value="4">April</MenuItem>
-                  <MenuItem value="5">May</MenuItem>
-                  <MenuItem value="6">June</MenuItem>
-                  <MenuItem value="7">July</MenuItem>
-                  <MenuItem value="8">August</MenuItem>
-                  <MenuItem value="9">September</MenuItem>
-                  <MenuItem value="10">October</MenuItem>
-                  <MenuItem value="11">November</MenuItem>
-                  <MenuItem value="12">December</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Day */}
-            <Grid item xs={12} md={6}>
-              <TextField
-                type="number"
-                label="Day"
-                variant="outlined"
-                fullWidth
-                required
-                InputLabelProps={{
-                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
-                }}
-                className="custom-textfield"
-                value={day}
-                onChange={(e) => setDay(e.target.value)}
-              />
-            </Grid>
-
-            {/* Days Of Week */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Days Of Week</InputLabel>
-                <Select value={daysofweek} onChange={(e) => setDaysOfWeek(e.target.value)}>
-                  <MenuItem value="1">Sunday</MenuItem>
-                  <MenuItem value="2">Monday</MenuItem>
-                  <MenuItem value="3">Tuesday</MenuItem>
-                  <MenuItem value="4">Wednesday</MenuItem>
-                  <MenuItem value="5">Thursday</MenuItem>
-                  <MenuItem value="6">Friday</MenuItem>
-                  <MenuItem value="7">Saturday</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
 
             {/* Origin Airport */}
             <Grid item xs={12} md={6}>
@@ -341,12 +286,12 @@ const Fare = () => {
         {/* Confirmation */}
         {confirmation && (
           <Typography variant="h6" style={{ marginTop: "20px" }}>
-            {`Flight from ${confirmation.originAirport.name} to ${confirmation.destinationAirport.name}`}<br />
+            {`Flight from ${confirmation.originAirport} to ${confirmation.destinationAirport}`}<br />
             {`Scheduled Departure: ${formatDateTime(confirmation.scheduledDeparture)}`}<br />
             {`Scheduled Arrival: ${formatDateTime(confirmation.scheduledArrival)}`}<br />
-            {`Departure Delay: ${confirmation.departureDelay}`}<br />
-            {`Air Time: ${confirmation.airTime}`}<br />
-            {`Distance: ${confirmation.distance.toFixed(2)}`}<br />
+            {`Departure Delay: ${confirmation.departureDelay} minutes`}<br />
+            {`Air Time: ${confirmation.airTime} minutes`}<br />
+            {`Distance: ${confirmation.distance.toFixed(2)} km`}<br />
           </Typography>
         )}
 
