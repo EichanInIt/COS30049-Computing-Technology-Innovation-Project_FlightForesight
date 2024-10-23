@@ -7,6 +7,7 @@ import pandas as pd
 import os
 import logging
 from sklearn.preprocessing import LabelEncoder
+from fastapi.responses import JSONResponse
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -20,13 +21,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load the model and label encoders
+# Load the model 
 try:
     model_path = os.path.join("model", "rf_regressor.pkl")
     model = joblib.load(model_path)
 except Exception as e:
     logging.error(f"Error loading model: {str(e)}")
-    raise RuntimeError("Model file not found. Ensure 'rf_regressor.pkl' is available.")
+    raise RuntimeError("Model file not found.")
 
 # Request data model for flight fare prediction
 class FlightFareRequest(BaseModel):
@@ -37,6 +38,8 @@ class FlightFareRequest(BaseModel):
     arrivalTime: str
     stops: str
     flightClass: str
+    duration: float
+    days_left: int
 
 # Feature transformation function based on the training process
 def transform_features(data: FlightFareRequest):
@@ -46,13 +49,15 @@ def transform_features(data: FlightFareRequest):
     """
     # Create a DataFrame from the input data
     input_df = pd.DataFrame({
-        'airline': "Air Italy",
-        'source_city': "Madang",
-        'destination_city': "Wewak",
-        'departure_time': "Morning",
-        'arrival_time': "Evening",
+        'airline': [data.airline],
+        'source_city': [data.sourceCity],
+        'departure_time': [data.departureTime],
         'stops': [data.stops],
+        'arrival_time': [data.arrivalTime],
+        'destination_city': [data.destinationCity],
         'class': [data.flightClass],
+        'duration': [data.duration],
+        'days_left': [data.days_left],
     })
     
     # Apply label encoding to categorical columns (same as done during training)
@@ -77,7 +82,7 @@ async def predict_flight_fare(flight_data: FlightFareRequest):
         predicted_fare = model.predict(features)
 
         # Step 3: Return the predicted fare (rounded to 2 decimal places)
-        return {"predicted_fare": round(predicted_fare[0], 2)}
+        return JSONResponse(content={"predicted_fare": round(predicted_fare[0], 2)}, media_type="application/json")
     
     except Exception as e:
         logging.error(f"Prediction error: {str(e)}")
@@ -87,6 +92,7 @@ async def predict_flight_fare(flight_data: FlightFareRequest):
 @app.get("/")
 async def root():
     return {"message": "Flight Fare Prediction API is running"}
+    
 
 # Main execution
 if __name__ == "__main__":

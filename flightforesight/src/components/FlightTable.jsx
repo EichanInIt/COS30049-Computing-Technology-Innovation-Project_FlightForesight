@@ -18,6 +18,7 @@ const FlightTable = ({ confirmation }) => {
             "Destination City",
             "Departure Time",
             "Arrival Time",
+            "Price"
           ],
           align: "center",
           line: { width: 1, color: 'black' },
@@ -27,12 +28,13 @@ const FlightTable = ({ confirmation }) => {
         cells: {
           values: [
             [confirmation.airline],
-            [confirmation.class],
+            [confirmation.flightClass],
             [confirmation.stops],
             [confirmation.sourceCity],
             [confirmation.destinationCity],
             [confirmation.departureTime],
             [confirmation.arrivalTime],
+            [confirmation.fare]
           ],
           align: "center",
           line: { color: "black", width: 1 },
