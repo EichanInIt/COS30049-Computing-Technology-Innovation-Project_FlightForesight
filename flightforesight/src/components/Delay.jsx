@@ -19,7 +19,6 @@ const Fare = () => {
   const [scheduledDeparture, setScheduledDeparture] = useState("");
   const [scheduledArrival, setScheduledArrival] = useState("");
   const [departureDelay, setDepartureDelay] = useState("");
-  const [airTime, setAirTime] = useState("");
   const [airports, setAirports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
@@ -96,6 +95,9 @@ const Fare = () => {
       destinationAirport.longitude
     );
 
+    const planeVelocity = 880 // The typical speed is between 800 - 965 km/h
+    const airTime = distance / planeVelocity * 60; // Convert hours to minutes
+
     // Extract month, day, and day of week from scheduledDeparture
     const month = ScheduledDepartureTime.getMonth() + 1; // getMonth() is zero-based
     const day = ScheduledDepartureTime.getDate();
@@ -105,12 +107,12 @@ const Fare = () => {
       month,
       day,
       daysofweek,
-      originAirport: originAirport.name,
-      destinationAirport: destinationAirport.name,
+      originAirport: originAirport.iata,
+      destinationAirport: destinationAirport.iata,
       scheduledDeparture,
       scheduledArrival,
       departureDelay,
-      airTime,
+      airTime: airTime,
       distance: distance
     };
 
@@ -211,7 +213,7 @@ const Fare = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 type="datetime-local"
-                label="Departure Date"
+                label="Scheduled Arrival"
                 variant="outlined"
                 fullWidth
                 required
@@ -239,23 +241,6 @@ const Fare = () => {
                 className="custom-textfield"
                 value={departureDelay}
                 onChange={(e) => setDepartureDelay(e.target.value)}
-              />
-            </Grid>
-
-            {/* Air Time */}
-            <Grid item xs={12} md={6}>
-              <TextField
-                type="number"
-                label="Air Time (minutes)"
-                variant="outlined"
-                fullWidth
-                required
-                InputLabelProps={{
-                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
-                }}
-                className="custom-textfield"
-                value={airTime}
-                onChange={(e) => setAirTime(e.target.value)}
               />
             </Grid>
 
@@ -290,8 +275,8 @@ const Fare = () => {
             {`Scheduled Departure: ${formatDateTime(confirmation.scheduledDeparture)}`}<br />
             {`Scheduled Arrival: ${formatDateTime(confirmation.scheduledArrival)}`}<br />
             {`Departure Delay: ${confirmation.departureDelay} minutes`}<br />
-            {`Air Time: ${confirmation.airTime} minutes`}<br />
-            {`Distance: ${confirmation.distance.toFixed(2)} km`}<br />
+            {`Air Time: ${confirmation.airTime.toFixed(0)} minutes`}<br />
+            {`Distance: ${confirmation.distance.toFixed(0)} km`}<br />
           </Typography>
         )}
 

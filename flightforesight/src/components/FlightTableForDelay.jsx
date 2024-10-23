@@ -50,13 +50,13 @@ const FlightTableForDelay = ({ confirmation }) => {
             [formatDateTime(confirmation.scheduledDeparture)], 
             [formatDateTime(confirmation.scheduledArrival)],  
             [confirmation.departureDelay],
-            [confirmation.airTime],
-            [confirmation.distance.toFixed(2)]
+            [confirmation.airTime.toFixed(0)],
+            [confirmation.distance.toFixed(0)]
           ],
           align: "center",
           line: { color: "black", width: 1 },
           fill: { color: "white" },
-          font: { family: "Arial, sans-serif", size: 12, color: "black" },
+          font: { family: "Arial, sans-serif", size: 12, color: "black" }
         },
       },
     ];
