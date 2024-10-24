@@ -15,9 +15,21 @@ const formatDateTime = (isoString) => {
     return new Intl.DateTimeFormat('en-GB', options).format(date);
   };
 
-const FlightTableForDelay = ({ confirmation }) => {    
+const FlightTableForDelay = ({ confirmations }) => {    
   const tableData = () => {
-    if (!confirmation) return []; // Ensure we have confirmation data
+    if (!confirmations || confirmations.length === 0) return []; // Ensure we have confirmation data
+
+    // Extract each field into arrays for each column
+    const months = confirmations.map(record => record.month);
+    const days = confirmations.map(record => record.day);
+    const daysofweeks = confirmations.map(record => record.daysofweek);
+    const originAirports = confirmations.map(record => record.originAirport);
+    const destinationAirports = confirmations.map(record => record.destinationAirport);
+    const scheduledDepartures = confirmations.map(record => formatDateTime(record.scheduledDeparture));
+    const scheduledArrivals = confirmations.map(record => formatDateTime(record.scheduledArrival));
+    const departureDelays = confirmations.map(record => record.departureDelay);
+    const airTimes = confirmations.map(record => record.airTime.toFixed(0));
+    const distances = confirmations.map(record => record.distance.toFixed(0));
 
     return [
       {
@@ -42,16 +54,16 @@ const FlightTableForDelay = ({ confirmation }) => {
         },
         cells: {
           values: [
-            [confirmation.month],
-            [confirmation.day],
-            [confirmation.daysofweek],
-            [confirmation.originAirport],
-            [confirmation.destinationAirport],
-            [formatDateTime(confirmation.scheduledDeparture)], 
-            [formatDateTime(confirmation.scheduledArrival)],  
-            [confirmation.departureDelay],
-            [confirmation.airTime.toFixed(0)],
-            [confirmation.distance.toFixed(0)]
+            months,
+            days,
+            daysofweeks,
+            originAirports,
+            destinationAirports,
+            scheduledDepartures, 
+            scheduledArrivals,  
+            departureDelays,
+            airTimes,
+            distances
           ],
           align: "center",
           line: { color: "black", width: 1 },

@@ -1,10 +1,20 @@
-// FlightDetailsTable.js
 import React from "react";
 import Plot from "react-plotly.js";
 
-const FlightTable = ({ confirmation }) => {
+const FlightTableForFare = ({ confirmations }) => {
+  // Handle multiple flight records
   const tableData = () => {
-    if (!confirmation) return []; // Ensure we have confirmation data
+    if (!confirmations || confirmations.length === 0) return []; // Ensure we have confirmation data
+
+    // Extract each field into arrays for each column
+    const airlines = confirmations.map(record => record.airline);
+    const flightClasses = confirmations.map(record => record.flightClass);
+    const stops = confirmations.map(record => record.stops);
+    const sourceCities = confirmations.map(record => record.sourceCity);
+    const destinationCities = confirmations.map(record => record.destinationCity);
+    const departureTimes = confirmations.map(record => record.departureTime);
+    const arrivalTimes = confirmations.map(record => record.arrivalTime);
+    const fares = confirmations.map(record => record.fare);
 
     return [
       {
@@ -27,14 +37,14 @@ const FlightTable = ({ confirmation }) => {
         },
         cells: {
           values: [
-            [confirmation.airline],
-            [confirmation.flightClass],
-            [confirmation.stops],
-            [confirmation.sourceCity],
-            [confirmation.destinationCity],
-            [confirmation.departureTime],
-            [confirmation.arrivalTime],
-            [confirmation.fare]
+            airlines,
+            flightClasses,
+            stops,
+            sourceCities,
+            destinationCities,
+            departureTimes,
+            arrivalTimes,
+            fares
           ],
           align: "center",
           line: { color: "black", width: 1 },
@@ -58,4 +68,4 @@ const FlightTable = ({ confirmation }) => {
   );
 };
 
-export default FlightTable;
+export default FlightTableForFare;

@@ -13,7 +13,7 @@ import { motion } from "framer-motion";
 import FlightPath from './FlightPath';
 import FlightTableForDelay from "./FlightTableForDelay";
 
-const Fare = () => {
+const Delay = () => {
   const [originAirport, setOriginAirport] = useState("");
   const [destinationAirport, setDestinationAirport] = useState("");
   const [scheduledDeparture, setScheduledDeparture] = useState("");
@@ -21,7 +21,7 @@ const Fare = () => {
   const [departureDelay, setDepartureDelay] = useState("");
   const [airports, setAirports] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [confirmation, setConfirmation] = useState(null);
+  const [confirmations, setConfirmations] = useState([]);
   const [flightPath, setFlightPath] = useState([]);
   const [pathVisible, setPathVisible] = useState(false);
   const [flightTable, setFlightTable] = useState(null);
@@ -116,8 +116,28 @@ const Fare = () => {
       distance: distance
     };
 
+    // try {
+    //   const response = await axios.post("http://localhost:8000/predict/", data, {
+    //     headers: {
+    //       "Content-Type": "application/json"
+    //     }
+    //   });
+    //   console.log("Predicted Delay:", response.data.predicted_delay);
+    
+    //   // Update state with the confirmation and predicted fare
+    //   setConfirmation({ ...data, delay: response.data.predicted_delay });
+    //   setFlightTable(data);
+    //   setFlightPath([originAirport, destinationAirport]); // Make sure to use correct keys
+    //   setPathVisible(true);
+    // } catch (error) {
+    //   console.error("Error predicting delay:", error);
+    //   alert("Error occurred while predicting delay. Please try again.");
+    // } finally {
+    //   setLoading(false);
+    // }
+
       console.log("Submitting Data:", data);
-      setConfirmation(data);
+      setConfirmations([...confirmations, {...data}]);
       setFlightPath([originAirport, destinationAirport]); 
       setPathVisible(true);
       setFlightTable(data);
@@ -268,30 +288,18 @@ const Fare = () => {
           </Grid>
         </form>
 
-        {/* Confirmation */}
-        {confirmation && (
-          <Typography variant="h6" style={{ marginTop: "20px" }}>
-            {`Flight from ${confirmation.originAirport} to ${confirmation.destinationAirport}`}<br />
-            {`Scheduled Departure: ${formatDateTime(confirmation.scheduledDeparture)}`}<br />
-            {`Scheduled Arrival: ${formatDateTime(confirmation.scheduledArrival)}`}<br />
-            {`Departure Delay: ${confirmation.departureDelay} minutes`}<br />
-            {`Air Time: ${confirmation.airTime.toFixed(0)} minutes`}<br />
-            {`Distance: ${confirmation.distance.toFixed(0)} km`}<br />
-          </Typography>
-        )}
-
         {/* Flight Path Visualization */}
         {pathVisible && flightPath.length === 2 && (
           <FlightPath flightPath={flightPath} />
         )}
 
         {/* Flight Details Table Visualization */}
-        {flightTable && (
-          <FlightTableForDelay confirmation={confirmation} />
+        {confirmations.length > 0 && (
+          <FlightTableForDelay confirmations={confirmations} />
         )}
       </Paper>
     </Container>
   );
 };
 
-export default Fare;
+export default Delay;

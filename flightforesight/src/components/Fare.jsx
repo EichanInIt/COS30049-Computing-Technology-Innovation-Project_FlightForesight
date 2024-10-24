@@ -15,8 +15,9 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import FlightPath from './FlightPath';
-import FlightTable from "./FlightTable";
+import FlightTable from "./FlightTableForFare";
 import axios from 'axios';
+import FlightTableForFare from "./FlightTableForFare";
 
 const Fare = () => {
   const [sourceCity, setSourceCity] = useState("");
@@ -29,7 +30,7 @@ const Fare = () => {
   const [airline, setAirlines] = useState([]);
   const [selectedAirline, setSelectedAirline] = useState("");
   const [loading, setLoading] = useState(false);
-  const [confirmation, setConfirmation] = useState(null);
+  const [confirmations, setConfirmations] = useState([]);
   const [flightPath, setFlightPath] = useState([]);
   const [pathVisible, setPathVisible] = useState(false);
   const [flightTable, setFlightTable] = useState(null); 
@@ -114,7 +115,7 @@ const Fare = () => {
     console.log("Submitting Data:", data);
 
     try {
-      const response = await axios.post("http://localhost:8000/predict/", data, {
+      const response = await axios.post("http://localhost:8000/fare/predict/", data, {
         headers: {
           "Content-Type": "application/json"
         }
@@ -122,7 +123,7 @@ const Fare = () => {
       console.log("Predicted Fare:", response.data.predicted_fare);
     
       // Update state with the confirmation and predicted fare
-      setConfirmation({ ...data, fare: response.data.predicted_fare });
+      setConfirmations([...confirmations, { ...data, fare: response.data.predicted_fare }]);
       setFlightTable(data);
       setFlightPath([source_city, destination_city]); // Make sure to use correct keys
       setPathVisible(true);
@@ -320,17 +321,6 @@ const Fare = () => {
             </Grid>
           </Grid>
         </form>
-
-        {/* Confirmation */}
-        {confirmation && (
-          <Typography variant="h6" style={{ marginTop: "20px" }}>
-            {`Flight from ${confirmation.sourceCity} to ${confirmation.destinationCity} with ${confirmation.airline} (${confirmation.flightClass}).`}<br />
-            {`Departure time: ${confirmation.departureTime}. Arrival time: ${confirmation.arrivalTime}. Stops: ${confirmation.stops}.`}<br />
-            {`Flight duration: ${confirmation.duration.toFixed(2)} hours.`}<br />
-            {`Days left before departure date: ${confirmation.days_left} days.`}<br />
-            {`Predicted Fare: ${confirmation.fare} AUD`}
-          </Typography>
-        )}
         
         {/* Flight Path Visualization */}
         {pathVisible && flightPath.length === 2 && (
@@ -338,8 +328,8 @@ const Fare = () => {
         )}
 
         {/* Flight Details Table Visualization */}
-        {flightTable && (
-          <FlightTable confirmation={confirmation} />
+        {confirmations.length > 0 && (
+          <FlightTableForFare confirmations={confirmations} />
         )}
       </Paper>
     </Container>
