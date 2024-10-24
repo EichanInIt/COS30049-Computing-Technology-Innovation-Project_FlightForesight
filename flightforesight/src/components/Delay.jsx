@@ -117,7 +117,7 @@ const Delay = () => {
     };
 
     // try {
-    //   const response = await axios.post("http://localhost:8000/predict/", data, {
+    //   const response = await axios.post("http://localhost:8000/delay/predict/", data, {
     //     headers: {
     //       "Content-Type": "application/json"
     //     }
@@ -125,7 +125,7 @@ const Delay = () => {
     //   console.log("Predicted Delay:", response.data.predicted_delay);
     
     //   // Update state with the confirmation and predicted fare
-    //   setConfirmation({ ...data, delay: response.data.predicted_delay });
+    //   setConfirmations([...confirmations, {...data, delay: response.data.predicted_delay}]);
     //   setFlightTable(data);
     //   setFlightPath([originAirport, destinationAirport]); // Make sure to use correct keys
     //   setPathVisible(true);

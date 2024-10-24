@@ -14,7 +14,7 @@ function App() {
         <CustomNavbar />
         <main className="content">
           <Routes>
-            <Route path="/" element={<Home />} /> {/* Home route */}
+            <Route path="/" element={<Home />} /> 
             <Route path="/fare" element={<Fare />} />
             <Route path="/delay" element={<Delay />} />
           </Routes>

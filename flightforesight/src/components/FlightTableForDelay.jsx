@@ -82,7 +82,7 @@ const FlightTableForDelay = ({ confirmations }) => {
         height: 300,
         margin: { t: 40, l: 0, r: 0, b: 0, pad: 4 },
       }}
-      style={{ width: "100%", height: "400px" }} // Adjust height as needed
+      style={{ width: "100%", height: "400px" }} 
     />
   );
 };

@@ -124,7 +124,7 @@ const Fare = () => {
       // Update state with the confirmation and predicted fare
       setConfirmations([...confirmations, { ...data, fare: response.data.predicted_fare }]);
       setFlightTable(data);
-      setFlightPath([source_city, destination_city]); // Make sure to use correct keys
+      setFlightPath([source_city, destination_city]);
       setPathVisible(true);
     } catch (error) {
       console.error("Error predicting fare:", error);

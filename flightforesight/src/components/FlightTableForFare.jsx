@@ -36,7 +36,7 @@ const FlightTableForFare = ({ confirmations }) => {
           ],
           align: "center",
           line: { width: 1, color: 'black' },
-          fill: { color: 'lightgrey' }, // Header background color
+          fill: { color: 'lightgrey' }, 
           font: { family: "Arial, sans-serif", size: 12, color: "black" },
         },
         cells: {
@@ -69,7 +69,7 @@ const FlightTableForFare = ({ confirmations }) => {
         height: 300,
         margin: { t: 40, l: 0, r: 0, b: 0, pad: 4 },
       }}
-      style={{ width: "100%", height: "400px" }} // Adjust height as needed
+      style={{ width: "100%", height: "400px" }} 
     />
   );
 };

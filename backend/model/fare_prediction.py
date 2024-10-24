@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
@@ -8,6 +8,9 @@ import os
 import logging
 from sklearn.preprocessing import LabelEncoder
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
+from model.fare_prediction_db import FarePrediction, get_db
+import math
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -68,31 +71,59 @@ def transform_features(data: FlightFareRequest):
         if input_df[column].dtype == 'object':
             input_df[column] = le.fit_transform(input_df[column])
 
-    # Return the feature set as a NumPy array
-    return input_df.values
+    # Assign feature names to the transformed features
+    feature_names = ['airline', 'source_city', 'departure_time', 'stops', 'arrival_time', 
+                     'destination_city', 'class', 'duration', 'days_left']
+    
+    # Return the feature set as a DataFrame with feature names
+    transformed_df = pd.DataFrame(input_df.values, columns=feature_names)
+    
+    return transformed_df
 
 # Prediction endpoint
-@app.post("/predict/")
-async def predict_flight_fare(flight_data: FlightFareRequest):
+@app.post("/fare/predict/")
+async def predict_flight_fare(flight_data: FlightFareRequest, db: Session = Depends(get_db)):
     try:
-        # Step 1: Transform input data into model features
+        # Transform input data into model features
         features = transform_features(flight_data)
 
-        # Step 2: Perform prediction using the loaded model
+        # Perform prediction using the loaded model
         predicted_fare = model.predict(features)
 
-        # Step 3: Return the predicted fare (rounded to 2 decimal places)
+        # Store the features and prediction in the database
+        flight_prediction = FarePrediction(
+            airline=flight_data.airline,
+            source_city=flight_data.sourceCity,
+            destination_city=flight_data.destinationCity,
+            departure_time=flight_data.departureTime,
+            arrival_time=flight_data.arrivalTime,
+            stops=flight_data.stops,
+            flight_class=flight_data.flightClass,
+            duration=float(math.ceil(flight_data.duration * 100)) / 100,
+            days_left=flight_data.days_left,
+            predicted_fare=round(predicted_fare[0], 2)
+        )
+        db.add(flight_prediction)
+        db.commit()
+        db.refresh(flight_prediction)
+
+        # Return the predicted fare (rounded to 2 decimal places)
         return JSONResponse(content={"predicted_fare": round(predicted_fare[0], 2)}, media_type="application/json")
     
     except Exception as e:
         logging.error(f"Prediction error: {str(e)}")
+        db.rollback()
         raise HTTPException(status_code=500, detail="Error predicting flight fare")
 
 # Root endpoint 
-@app.get("/")
+@app.get("/fare")
 async def root():
     return {"message": "Flight Fare Prediction API is running"}
-    
+
+@app.get("/fare/predictions/")
+async def get_predictions(db: Session = Depends(get_db)):
+    predictions = db.query(FarePrediction).all()
+    return predictions
 
 # Main execution
 if __name__ == "__main__":
