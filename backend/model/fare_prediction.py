@@ -18,7 +18,7 @@ app = FastAPI()
 # CORS middleware to allow communication with frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Update with frontend URL
+    allow_origins=["http://localhost:5173"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,12 +44,11 @@ class FlightFareRequest(BaseModel):
     duration: float
     days_left: int
 
-# Feature transformation function based on the training process
 def transform_features(data: FlightFareRequest):
-    """
-    This function transforms the input data into the feature set used during model training.
-    It applies label encoding to categorical variables as done during training.
-    """
+
+    # This function transforms the input data into the feature set used during model training.
+    # It applies label encoding to categorical variables as done during training.
+
     # Create a DataFrame from the input data
     input_df = pd.DataFrame({
         'airline': [data.airline],
@@ -120,6 +119,7 @@ async def predict_flight_fare(flight_data: FlightFareRequest, db: Session = Depe
 async def root():
     return {"message": "Flight Fare Prediction API is running"}
 
+# Endpoint to get the prediction record stored in the database
 @app.get("/fare/predictions/")
 async def get_predictions(db: Session = Depends(get_db)):
     predictions = db.query(FarePrediction).all()

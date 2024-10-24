@@ -4,7 +4,7 @@ import Plot from "react-plotly.js";
 const FlightTableForFare = ({ confirmations }) => {
   // Handle multiple flight records
   const tableData = () => {
-    if (!confirmations || confirmations.length === 0) return []; // Ensure we have confirmation data
+    if (!confirmations || confirmations.length === 0) return []; 
 
     // Extract each field into arrays for each column
     const airlines = confirmations.map(record => record.airline);

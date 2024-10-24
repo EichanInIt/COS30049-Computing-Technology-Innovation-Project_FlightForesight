@@ -26,14 +26,14 @@ const Delay = () => {
   const [pathVisible, setPathVisible] = useState(false);
   const [flightTable, setFlightTable] = useState(null);
 
-  // Fetch airports and airlines
+  // Fetch airports data
   const fetchAirportsData = async () => {
     try {
-      const response = await fetch("airports.json"); // Replace with actual path
+      const response = await fetch("airports.json"); 
       const data = await response.json();
       setAirports(data);
     } catch (error) {
-      console.error("Error fetching airports data:", error);
+      console.error("Airports data cannot be fetched:", error);
     }
   };
 
@@ -73,7 +73,7 @@ const Delay = () => {
     const ScheduledArrivalTime = new Date(scheduledArrival);
 
     if (ScheduledArrivalTime <= ScheduledDepartureTime) {
-      alert("Arrival time must be after the departure time. Please choose again.");
+      alert("Arrival time must be after the departure time.");
       setLoading(false);
       return;
     }
@@ -82,7 +82,7 @@ const Delay = () => {
     const today = new Date(); // Get today's date
 
     if (ScheduledDepartureTime <= today) {
-      alert("The day you bought the ticket must be before the departure time. Please choose again.");
+      alert("The day you bought the ticket must be before the departure time.");
       setLoading(false);
       return;
     }
@@ -101,7 +101,7 @@ const Delay = () => {
     // Extract month, day, and day of week from scheduledDeparture
     const month = ScheduledDepartureTime.getMonth() + 1; // getMonth() is zero-based
     const day = ScheduledDepartureTime.getDate();
-    const daysofweek = ScheduledDepartureTime.getDay() + 1; // getDay() is also zero-based (0 for Sunday)
+    const daysofweek = ScheduledDepartureTime.getDay() + 1; // getDay() is zero-based (0 for Sunday)
 
     const data = {
       month,
@@ -130,8 +130,8 @@ const Delay = () => {
     //   setFlightPath([originAirport, destinationAirport]); // Make sure to use correct keys
     //   setPathVisible(true);
     // } catch (error) {
-    //   console.error("Error predicting delay:", error);
-    //   alert("Error occurred while predicting delay. Please try again.");
+    //   console.error("There is error while predicting delay:", error);
+    //   alert("There is error occurred while predicting delay.");
     // } finally {
     //   setLoading(false);
     // }

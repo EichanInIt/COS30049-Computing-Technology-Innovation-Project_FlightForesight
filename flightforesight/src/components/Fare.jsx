@@ -36,24 +36,24 @@ const Fare = () => {
   const [departureDate, setDepartureDate] = useState("");
   const [arrivalDate, setArrivalDate] = useState("");
 
-  // Fetch airports and airlines
+  // Fetch airports and airlines data
   const fetchAirportsData = async () => {
     try {
-      const response = await fetch("airports.json"); // Replace with actual path
+      const response = await fetch("airports.json"); 
       const data = await response.json();
       setAirports(data);
     } catch (error) {
-      console.error("Error fetching airports data:", error);
+      console.error("Airports data cannot be fetched:", error);
     }
   };
 
   const fetchAirlinesData = async () => {
     try {
-      const response = await fetch("airlines.json"); // Replace with actual path
+      const response = await fetch("airlines.json"); 
       const data = await response.json();
       setAirlines(data);
     } catch (error) {
-      console.error("Error fetching airlines data:", error);
+      console.error("Airlines data cannot be fetched:", error);
     }
   };
 
@@ -80,7 +80,7 @@ const Fare = () => {
     const arrivalDateTime = new Date(arrivalDate);
 
     if (arrivalDateTime <= departureDateTime) {
-      alert("Arrival time must be after the departure time. Please choose again.");
+      alert("Arrival time must be after the departure time.");
       setLoading(false);
       return;
     }
@@ -94,7 +94,7 @@ const Fare = () => {
     const days_before_departure = Math.ceil((departureDateTime - today) / (1000 * 60 * 60 * 24)); // Calculate days left
 
     if (departureDateTime <= today) {
-      alert("The day you bought the ticket must be before the departure time. Please choose again.");
+      alert("The day you bought the ticket must be before the departure time.");
       setLoading(false);
       return;
     }
@@ -121,14 +121,13 @@ const Fare = () => {
       });
       console.log("Predicted Fare:", response.data.predicted_fare);
     
-      // Update state with the confirmation and predicted fare
       setConfirmations([...confirmations, { ...data, fare: response.data.predicted_fare }]);
       setFlightTable(data);
       setFlightPath([source_city, destination_city]);
       setPathVisible(true);
     } catch (error) {
-      console.error("Error predicting fare:", error);
-      alert("Error occurred while predicting fare. Please try again.");
+      console.error("There is error while predicting fare:", error);
+      alert("There is error occurred while predicting fare.");
     } finally {
       setLoading(false);
     }
