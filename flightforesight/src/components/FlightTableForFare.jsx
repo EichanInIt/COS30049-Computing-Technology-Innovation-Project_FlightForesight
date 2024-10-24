@@ -14,6 +14,8 @@ const FlightTableForFare = ({ confirmations }) => {
     const destinationCities = confirmations.map(record => record.destinationCity);
     const departureTimes = confirmations.map(record => record.departureTime);
     const arrivalTimes = confirmations.map(record => record.arrivalTime);
+    const durations = confirmations.map(record => record.duration);
+    const days_lefts = confirmations.map(record => record.days_left);
     const fares = confirmations.map(record => record.fare);
 
     return [
@@ -28,6 +30,8 @@ const FlightTableForFare = ({ confirmations }) => {
             "Destination City",
             "Departure Time",
             "Arrival Time",
+            "Duration (hours)",
+            "Days Left Before Departure",
             "Price (AUD)"
           ],
           align: "center",
@@ -44,6 +48,8 @@ const FlightTableForFare = ({ confirmations }) => {
             destinationCities,
             departureTimes,
             arrivalTimes,
+            durations,
+            days_lefts,
             fares
           ],
           align: "center",
