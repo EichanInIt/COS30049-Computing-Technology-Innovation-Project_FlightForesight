@@ -144,19 +144,6 @@ const Delay = () => {
       setLoading(false); 
   };
 
-  const formatDateTime = (isoString) => {
-    const date = new Date(isoString);
-    const options = {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: true
-    };
-    return new Intl.DateTimeFormat('en-GB', options).format(date);
-  };
-
   return (
     <Container>
       <Paper

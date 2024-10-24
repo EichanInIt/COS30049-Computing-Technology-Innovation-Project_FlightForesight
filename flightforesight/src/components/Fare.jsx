@@ -15,7 +15,6 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import FlightPath from './FlightPath';
-import FlightTable from "./FlightTableForFare";
 import axios from 'axios';
 import FlightTableForFare from "./FlightTableForFare";
 
