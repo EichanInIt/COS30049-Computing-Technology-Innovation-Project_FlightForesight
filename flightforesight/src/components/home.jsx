@@ -2,7 +2,7 @@
 import React from 'react';
 import Card from 'react-bootstrap/Card';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './components.css'; // Import combined CSS
+import './components.css'; 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBriefcase, faBirthdayCake, faUniversity } from '@fortawesome/free-solid-svg-icons';
 

@@ -1,8 +1,8 @@
+# backend/model/fare_prediction.py
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
-import numpy as np
 import pandas as pd
 import os
 import logging

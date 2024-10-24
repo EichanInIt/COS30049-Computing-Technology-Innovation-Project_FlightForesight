@@ -2,7 +2,7 @@
 import React from 'react';
 import { Navbar, Nav } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './components.css'; // Import combined CSS
+import './components.css'; 
 import { Link } from 'react-router-dom';
 
 function CustomNavbar() {
