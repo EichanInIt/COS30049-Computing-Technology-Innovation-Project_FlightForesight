@@ -26,11 +26,10 @@ const FlightTableForDelay = ({ confirmations }) => {
     const daysofweeks = confirmations.map(record => record.daysofweek);
     const originAirports = confirmations.map(record => record.originAirport);
     const destinationAirports = confirmations.map(record => record.destinationAirport);
-    const scheduledDepartures = confirmations.map(record => formatDateTime(record.scheduledDeparture));
-    const scheduledArrivals = confirmations.map(record => formatDateTime(record.scheduledArrival));
     const departureDelays = confirmations.map(record => record.departureDelay);
     const airTimes = confirmations.map(record => record.airTime.toFixed(0));
     const distances = confirmations.map(record => record.distance.toFixed(0));
+    const arrivalDelays = confirmations.map(record => record.delay);
 
     return [
       {
@@ -42,11 +41,10 @@ const FlightTableForDelay = ({ confirmations }) => {
             "Day Of Week",
             "Origin Airport",
             "Destination Airport",
-            "Scheduled Departure",
-            "Scheduled Arrival",
             "Departure Delay (minutes)",
             "Air Time (minutes)",
-            "Distance (km)"
+            "Distance (km)",
+            "Arrival Delay (minutes)"
           ],
           align: "center",
           line: { width: 1, color: 'black' },
@@ -59,12 +57,11 @@ const FlightTableForDelay = ({ confirmations }) => {
             days,
             daysofweeks,
             originAirports,
-            destinationAirports,
-            scheduledDepartures, 
-            scheduledArrivals,  
+            destinationAirports,  
             departureDelays,
             airTimes,
-            distances
+            distances,
+            arrivalDelays
           ],
           align: "center",
           line: { color: "black", width: 1 },

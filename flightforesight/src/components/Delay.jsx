@@ -13,13 +13,14 @@ import {
 import { motion } from "framer-motion";
 import FlightPath from './FlightPath';
 import FlightTableForDelay from "./FlightTableForDelay";
+import axios from "axios";
 
 const Delay = () => {
   const [originAirport, setOriginAirport] = useState("");
   const [destinationAirport, setDestinationAirport] = useState("");
   const [scheduledDeparture, setScheduledDeparture] = useState("");
   const [scheduledArrival, setScheduledArrival] = useState("");
-  const [departureDelay, setDepartureDelay] = useState("");
+  const [realDeparture, setRealDeparture] = useState("");
   const [airports, setAirports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [confirmations, setConfirmations] = useState([]);
@@ -72,21 +73,17 @@ const Delay = () => {
     // Convert the date and time inputs to Date objects
     const ScheduledDepartureTime = new Date(scheduledDeparture);
     const ScheduledArrivalTime = new Date(scheduledArrival);
+    const RealDepartureTime = new Date(realDeparture);
 
-    if (ScheduledArrivalTime <= ScheduledDepartureTime) {
+    if (ScheduledArrivalTime <= ScheduledDepartureTime || ScheduledArrivalTime <= RealDepartureTime) {
       alert("Arrival time must be after the departure time.");
       setLoading(false);
       return;
     }
 
-    // Calculate the days left before departure
-    const today = new Date(); // Get today's date
-
-    if (ScheduledDepartureTime <= today) {
-      alert("The day you bought the ticket must be before the departure time.");
-      setLoading(false);
-      return;
-    }
+    // Calculate the flight duration (in hours)
+    const delay_in_milliseconds = RealDepartureTime - ScheduledDepartureTime;
+    const delay_in_minutes = Math.abs(delay_in_milliseconds) / (1000 * 60); // Convert ms to minutes
 
     // Calculate the distance using lat/lon of the origin and destination airports
     const distance = calculateDistance(
@@ -104,45 +101,55 @@ const Delay = () => {
     const day = ScheduledDepartureTime.getDate();
     const daysofweek = ScheduledDepartureTime.getDay() + 1; // getDay() is zero-based (0 for Sunday)
 
-    const data = {
-      month,
-      day,
-      daysofweek,
-      originAirport: originAirport.iata,
-      destinationAirport: destinationAirport.iata,
-      scheduledDeparture,
-      scheduledArrival,
-      departureDelay,
-      airTime: airTime,
-      distance: distance
+    // Extract hours and minutes, then convert to hhmm format
+    const formatTimeToHHMM = (date) => {
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return parseInt(`${hours}${minutes}`);
     };
 
-    // try {
-    //   const response = await axios.post("http://localhost:8000/delay/predict/", data, {
-    //     headers: {
-    //       "Content-Type": "application/json"
-    //     }
-    //   });
-    //   console.log("Predicted Delay:", response.data.predicted_delay);
-    
-    //   // Update state with the confirmation and predicted fare
-    //   setConfirmations([...confirmations, {...data, delay: response.data.predicted_delay}]);
-    //   setFlightTable(data);
-    //   setFlightPath([originAirport, destinationAirport]); // Make sure to use correct keys
-    //   setPathVisible(true);
-    // } catch (error) {
-    //   console.error("There is error while predicting delay:", error);
-    //   alert("There is error occurred while predicting delay.");
-    // } finally {
-    //   setLoading(false);
-    // }
+    const scheduledDepartureHHMM = formatTimeToHHMM(ScheduledDepartureTime);
+    const scheduledArrivalHHMM = formatTimeToHHMM(ScheduledArrivalTime);
 
-      console.log("Submitting Data:", data);
-      setConfirmations([...confirmations, {...data}]);
-      setFlightPath([originAirport, destinationAirport]); 
-      setPathVisible(true);
+    const data = {
+      month: parseInt(month),
+      day: parseInt(day),
+      daysofweek: parseInt(daysofweek),
+      originAirport: originAirport.iata,
+      destinationAirport: destinationAirport.iata,
+      scheduledDeparture: scheduledDepartureHHMM,
+      scheduledArrival: scheduledArrivalHHMM,
+      departureDelay: parseInt(delay_in_minutes),
+      airTime: parseFloat(airTime),
+      distance: parseInt(distance)
+    };
+
+    try {
+      const response = await axios.post("http://localhost:8000/delay/predict/", data, {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      console.log("Predicted Delay:", response.data.predicted_delay);
+    
+      // Update state with the confirmation and predicted fare
+      setConfirmations([...confirmations, {...data, delay: response.data.predicted_delay}]);
       setFlightTable(data);
-      setLoading(false); 
+      setFlightPath([originAirport, destinationAirport]); // Make sure to use correct keys
+      setPathVisible(true);
+    } catch (error) {
+      console.error("There is error while predicting delay:", error);
+      alert("There is error occurred while predicting delay.");
+    } finally {
+      setLoading(false);
+    }
+
+      // console.log("Submitting Data:", data);
+      // setConfirmations([...confirmations, {...data}]);
+      // setFlightPath([originAirport, destinationAirport]); 
+      // setPathVisible(true);
+      // setFlightTable(data);
+      // setLoading(false); 
   };
 
   return (
@@ -235,20 +242,21 @@ const Delay = () => {
               />
             </Grid>
 
-            {/* Departure Delay */}
+            {/* Real-Time Departure */}
             <Grid item xs={12} md={6}>
               <TextField
-                type="number"
-                label="Departure Delay (minutes)"
+                type="datetime-local"
+                label="Real-Time Departure"
                 variant="outlined"
                 fullWidth
                 required
                 InputLabelProps={{
                   style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                  shrink: true
                 }}
                 className="custom-textfield"
-                value={departureDelay}
-                onChange={(e) => setDepartureDelay(e.target.value)}
+                value={realDeparture}
+                onChange={(e) => setRealDeparture(e.target.value)}
               />
             </Grid>
 
