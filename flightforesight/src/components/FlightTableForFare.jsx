@@ -15,9 +15,20 @@ const FlightTableForFare = ({ confirmations }) => {
     const destinationCities = confirmations.map(record => record.destinationCity);
     const departureTimes = confirmations.map(record => record.departureTime);
     const arrivalTimes = confirmations.map(record => record.arrivalTime);
-    const durations = confirmations.map(record => record.duration);
+    const durations = confirmations.map(record => record.duration.toFixed(2));
     const days_lefts = confirmations.map(record => record.days_left);
     const fares = confirmations.map(record => record.fare);
+
+    // Create row-wise colors, using 'lightblue' for the original data and 'white' for other rows
+    const rowColors = confirmations.map(record => 
+      record.isOriginal ? 'lightblue': 'white'
+    );
+    
+    // Create a nested array for cell colors, with each inner array representing a column
+    const cellColors = [
+      rowColors, rowColors, rowColors, rowColors, rowColors,
+      rowColors, rowColors, rowColors, rowColors, rowColors
+    ];
 
     return [
       {
@@ -38,7 +49,7 @@ const FlightTableForFare = ({ confirmations }) => {
           align: "center",
           line: { width: 1, color: 'black' },
           fill: { color: 'lightgrey' }, 
-          font: { family: "Arial, sans-serif", size: 12, color: "black" },
+          font: { family: "Arial, sans-serif", size: 12, color: "black", weight: "bold" },
         },
         cells: {
           values: [
@@ -55,7 +66,7 @@ const FlightTableForFare = ({ confirmations }) => {
           ],
           align: "center",
           line: { color: "black", width: 1 },
-          fill: { color: "white" },
+          fill: { color: cellColors },
           font: { family: "Arial, sans-serif", size: 12, color: "black" },
         },
       },

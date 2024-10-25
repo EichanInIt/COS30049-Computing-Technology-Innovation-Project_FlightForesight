@@ -122,8 +122,14 @@ const Fare = () => {
         }
       });
       console.log("Predicted Fare:", response.data.predicted_fare);
+
+      // Add predicted fare to the original data
+      const originalRecordWithFare = { ...data, fare: response.data.predicted_fare, isOriginal: true};
+
+      // Generate comparison records
+      const comparisonRecords = generateComparisonRecords(data, response.data.predicted_fare);
     
-      setConfirmations([...confirmations, { ...data, fare: response.data.predicted_fare }]);
+      setConfirmations([originalRecordWithFare, ...comparisonRecords]);
       setFlightTable(data);
       setFlightPath([source_city, destination_city]);
       setPathVisible(true);
@@ -134,6 +140,32 @@ const Fare = () => {
       setLoading(false);
     }
   };
+
+  const generateComparisonRecords = (originalData, predictedFare) => {
+    // Define the time periods for departure and arrival
+    const timePeriods = [
+      { departure: "Early_Morning", arrival: "Morning", time: "Early Morning (3:00 AM - 6:00 AM) to Morning (6:00 AM - 12:00 PM)" },
+      { departure: "Morning", arrival: "Afternoon", time: "Morning (6:00 AM - 12:00 PM) to Afternoon (12:00 PM - 6:00 PM)" },
+      { departure: "Afternoon", arrival: "Evening", time: "Afternoon (12:00 PM - 6:00 PM) to Evening (6:00 PM - 9:00 PM)" },
+      { departure: "Evening", arrival: "Night", time: "Evening (6:00 PM - 9:00 PM) to Night (9:00 PM - 12:00 AM)" },
+      { departure: "Night", arrival: "Late_Night", time: "Night (9:00 PM - 12:00 AM) to Late Night (12:00 AM - 3:00 AM)" }
+  ];
+
+    // Create comparison records for the selected time periods
+    return timePeriods.map(period => ({
+        airline: originalData.airline,
+        sourceCity: originalData.sourceCity,
+        departureTime: period.departure,
+        stops: originalData.stops,
+        arrivalTime: period.arrival,
+        destinationCity: originalData.destinationCity,
+        flightClass: originalData.flightClass,
+        duration: originalData.duration,
+        days_left: originalData.days_left,
+        fare: predictedFare
+    }));
+};
+
 
   return (
     <Container>

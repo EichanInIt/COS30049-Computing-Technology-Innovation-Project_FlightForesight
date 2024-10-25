@@ -43,7 +43,7 @@ const FlightPath = ({ flightPath }) => {
             showrivers: true, rivercolor: "blue",
             showcountries: true, countrycolor: "rebeccapurple",
             projection: {
-            type: "orthographic",
+            type: "natural earth",
             },
         },
         margin: { t: 40, l: 0, r: 0, b: 0 },
