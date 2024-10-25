@@ -1,3 +1,4 @@
+/* src/components/components.jsx */
 /* Global Styles */
 * {
   margin: 0;
@@ -226,17 +227,17 @@ button, a.btn {
 .custom-textfield .MuiOutlinedInput-root {
   /* Default outline color */
   fieldset {
-    border-color: var(--primary-color) !important;  /* Match the navbar's primary color */
+    border-color: var(--primary-color);  /* Match the navbar's primary color */
   }
   
   /* Outline color on hover */
   &:hover fieldset {
-    border-color: var(--primary-color) !important;  /* Same color on hover */
+    border-color: var(--primary-color);  /* Same color on hover */
   }
 
   /* Outline color when focused */
   &.Mui-focused fieldset {
-    border-color: var(--primary-color) !important;  /* Same color when focused */
+    border-color: var(--primary-color);  /* Same color when focused */
   }
 }
 

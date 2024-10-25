@@ -1,9 +1,8 @@
-// FlightPath.js
+// src/components/FlightPath.jsx
 import React from 'react';
 import Plot from 'react-plotly.js';
 
 const FlightPath = ({ flightPath }) => {
-  // Prepare data for Plotly flight path visualization
   const plotData = () => {
     if (flightPath.length < 2) return [];
     const latitudes = flightPath.map((airport) => airport.latitude);

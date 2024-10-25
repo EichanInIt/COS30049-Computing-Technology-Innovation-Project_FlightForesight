@@ -1,3 +1,4 @@
+// src/components/Fare.jsx
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -15,43 +16,46 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import FlightPath from './FlightPath';
-import FlightTable from "./FlightTable";
 import axios from 'axios';
+import FlightTableForFare from "./FlightTableForFare";
 
 const Fare = () => {
-  const [sourceCity, setSourceCity] = useState("");
-  const [departureTime, setDepartureTime] = useState("");
-  const [stops, setStops] = useState("");
-  const [arrivalTime, setArrivalTime] = useState("");
-  const [destinationCity, setDestinationCity] = useState("");
-  const [Class, setFlightClass] = useState("");
-  const [airports, setAirports] = useState([]);
   const [airline, setAirlines] = useState([]);
   const [selectedAirline, setSelectedAirline] = useState("");
+  const [airports, setAirports] = useState([]);
+  const [stops, setStops] = useState("");
+  const [sourceCity, setSourceCity] = useState("");
+  const [destinationCity, setDestinationCity] = useState("");
+  const [departureTime, setDepartureTime] = useState("");
+  const [arrivalTime, setArrivalTime] = useState("");
+  const [departureDate, setDepartureDate] = useState("");
+  const [arrivalDate, setArrivalDate] = useState("");
+  const [buyTicketDate, setBuyTicketDate] = useState("");
+  const [Class, setFlightClass] = useState("");
   const [loading, setLoading] = useState(false);
-  const [confirmation, setConfirmation] = useState(null);
+  const [confirmations, setConfirmations] = useState([]);
   const [flightPath, setFlightPath] = useState([]);
   const [pathVisible, setPathVisible] = useState(false);
-  const [flightTable, setFlightTable] = useState(null); // State to store flight details for the table
+  const [flightTable, setFlightTable] = useState(null); 
 
-  // Fetch airports and airlines
+  // Fetch airports and airlines data
   const fetchAirportsData = async () => {
     try {
-      const response = await fetch("airports.json"); // Replace with actual path
+      const response = await fetch("airports.json"); 
       const data = await response.json();
       setAirports(data);
     } catch (error) {
-      console.error("Error fetching airports data:", error);
+      console.error("Airports data cannot be fetched:", error);
     }
   };
 
   const fetchAirlinesData = async () => {
     try {
-      const response = await fetch("airlines.json"); // Replace with actual path
+      const response = await fetch("airlines.json"); 
       const data = await response.json();
       setAirlines(data);
     } catch (error) {
-      console.error("Error fetching airlines data:", error);
+      console.error("Airlines data cannot be fetched:", error);
     }
   };
 
@@ -67,54 +71,101 @@ const Fare = () => {
     const source_city = airports.find((airport) => airport.iata === sourceCity);
     const destination_city = airports.find((airport) => airport.iata === destinationCity);
   
-    if (!source_city || !destination_city) {
-      alert("Please select valid airports for both source and destination.");
+    if (source_city.city === destination_city.city) {
+      alert("Please select different cities.");
       setLoading(false);
       return;
     }
-  
-    if (sourceCity === destinationCity) {
-      alert("Please select different cities for source and destination.");
+
+    // Convert the date and time inputs to Date objects
+    const departureDateTime = new Date(departureDate);
+    const arrivalDateTime = new Date(arrivalDate);
+
+    if (arrivalDateTime <= departureDateTime) {
+      alert("Arrival time must be after the departure time.");
+      setLoading(false);
+      return;
+    }
+
+    // Calculate the flight duration (in hours)
+    const duration_in_milliseconds = arrivalDateTime - departureDateTime;
+    const duration_in_hours = Math.abs(duration_in_milliseconds) / (1000 * 60 * 60); // Convert ms to hours
+
+    // Calculate the days left before departure
+    const day_buy_ticket = new Date(buyTicketDate); // Get today's date
+    const days_before_departure = Math.ceil((departureDateTime - day_buy_ticket) / (1000 * 60 * 60 * 24)); // Calculate days left
+
+    if (departureDateTime <= day_buy_ticket) {
+      alert("The day you bought the ticket must be before the departure time.");
       setLoading(false);
       return;
     }
   
     const data = {
       airline: selectedAirline,
-      sourceCity: source_city.city,  // Using the full city name from the selected IATA code
+      sourceCity: source_city.city,  
       departureTime,
       stops,
       arrivalTime,
-      destinationCity: destination_city.city,  // Using the full city name from the selected IATA code
+      destinationCity: destination_city.city, 
       flightClass: Class,
+      duration: parseFloat(duration_in_hours),
+      days_left: parseInt(days_before_departure)
     };
 
     console.log("Submitting Data:", data);
 
-    // try {
-    //   const response = await axios.post("http://localhost:8000/predict/", data);
-    //   console.log("Predicted Fare:", response.data.predicted_fare);
+    try {
+      const response = await axios.post("http://localhost:8000/fare/predict/", data, {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      console.log("Predicted Fare:", response.data.predicted_fare);
 
-    //   // Update state with the confirmation and predicted fare
-    //   setConfirmation({ ...data, fare: response.data.predicted_fare });
-    //   setFlightTable(data);
-    //   setFlightPath([source_city, destination_city]);
-    //   setPathVisible(true);
-    // } catch (error) {
-    //     console.error("Error predicting fare:", error);
-    // } finally {
-    //     setLoading(false);
-    // }
+      // Add predicted fare to the original data
+      const originalRecordWithFare = { ...data, fare: response.data.predicted_fare, isOriginal: true};
 
-    console.log("Submitted Data:", data);
-    setConfirmation(data);
-    setFlightTable(data);
-
-    setFlightPath([source_city, destination_city]);
-    setPathVisible(true);
-
-    setLoading(false);
+      // Generate comparison records
+      const comparisonRecords = generateComparisonRecords(data, response.data.predicted_fare);
+    
+      setConfirmations([originalRecordWithFare, ...comparisonRecords]);
+      setFlightTable(data);
+      setFlightPath([source_city, destination_city]);
+      setPathVisible(true);
+    } catch (error) {
+      console.error("There is error while predicting fare:", error);
+      alert("There is error occurred while predicting fare.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const generateComparisonRecords = (originalData, predictedFare) => {
+    // Define the time periods for departure and arrival
+    const timePeriods = [
+      { departure: "Early_Morning", arrival: "Morning", time: "Early Morning (3:00 AM - 6:00 AM) to Morning (6:00 AM - 12:00 PM)" },
+      { departure: "Morning", arrival: "Afternoon", time: "Morning (6:00 AM - 12:00 PM) to Afternoon (12:00 PM - 6:00 PM)" },
+      { departure: "Afternoon", arrival: "Evening", time: "Afternoon (12:00 PM - 6:00 PM) to Evening (6:00 PM - 9:00 PM)" },
+      { departure: "Evening", arrival: "Night", time: "Evening (6:00 PM - 9:00 PM) to Night (9:00 PM - 12:00 AM)" },
+      { departure: "Night", arrival: "Late_Night", time: "Night (9:00 PM - 12:00 AM) to Late Night (12:00 AM - 3:00 AM)" }
+  ];
+
+    // Create comparison records for the selected time periods
+    return timePeriods.map(period => ({
+        airline: originalData.airline,
+        sourceCity: originalData.sourceCity,
+        departureTime: period.departure,
+        stops: originalData.stops,
+        arrivalTime: period.arrival,
+        destinationCity: originalData.destinationCity,
+        flightClass: originalData.flightClass,
+        duration: originalData.duration,
+        days_left: originalData.days_left,
+        fare: predictedFare
+    }));
+};
+
 
   return (
     <Container>
@@ -144,8 +195,20 @@ const Fare = () => {
                     required
                   />
                 )}
-                onChange={(event, newValue) => setSelectedAirline(newValue ? newValue.name : "")}
+                onChange={(event, newValue) => setSelectedAirline(newValue ? newValue.iata : "")}
               />
+            </Grid>
+
+            {/* Stops */}
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth className="custom-textfield" required>
+                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Stops</InputLabel>
+                <Select label="Stops" value={stops} onChange={(e) => setStops(e.target.value)}>
+                  <MenuItem value="zero">Direct</MenuItem>
+                  <MenuItem value="one">One Stop</MenuItem>
+                  <MenuItem value="two_or_more">Two Or More Stops</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
 
             {/* Source City */}
@@ -169,48 +232,6 @@ const Fare = () => {
               />
             </Grid>
 
-            {/* Departure Time */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Departure Time</InputLabel>
-                <Select value={departureTime} onChange={(e) => setDepartureTime(e.target.value)}>
-                  <MenuItem value="early-morning">Early Morning (3:00 AM - 6:00 AM)</MenuItem>
-                  <MenuItem value="morning">Morning (6:00 AM - 12:00 PM)</MenuItem>
-                  <MenuItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</MenuItem>
-                  <MenuItem value="evening">Evening (6:00 PM - 9:00 PM)</MenuItem>
-                  <MenuItem value="night">Night (9:00 PM - 12:00 AM)</MenuItem>
-                  <MenuItem value="late-night">Late Night (12:00 AM - 3:00 AM)</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Stops */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Stops</InputLabel>
-                <Select value={stops} onChange={(e) => setStops(e.target.value)}>
-                  <MenuItem value="zero">Direct</MenuItem>
-                  <MenuItem value="one">One Stop</MenuItem>
-                  <MenuItem value="two-or-more">Two Or More Stops</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Arrival Time */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Arrival Time</InputLabel>
-                <Select value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)}>
-                  <MenuItem value="early-morning">Early Morning (3:00 AM - 6:00 AM)</MenuItem>
-                  <MenuItem value="morning">Morning (6:00 AM - 12:00 PM)</MenuItem>
-                  <MenuItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</MenuItem>
-                  <MenuItem value="evening">Evening (6:00 PM - 9:00 PM)</MenuItem>
-                  <MenuItem value="night">Night (9:00 PM - 12:00 AM)</MenuItem>
-                  <MenuItem value="late-night">Late Night (12:00 AM - 3:00 AM)</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
             {/* Destination City */}
             <Grid item xs={12} md={6}>
               <Autocomplete
@@ -232,15 +253,99 @@ const Fare = () => {
               />
             </Grid>
 
+            {/* Departure Time */}
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth className="custom-textfield" required>
+                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Departure Time</InputLabel>
+                <Select label="Departure Time" value={departureTime} onChange={(e) => setDepartureTime(e.target.value)}>
+                  <MenuItem value="Early_Morning">Early Morning (3:00 AM - 6:00 AM)</MenuItem>
+                  <MenuItem value="Morning">Morning (6:00 AM - 12:00 PM)</MenuItem>
+                  <MenuItem value="Afternoon">Afternoon (12:00 PM - 6:00 PM)</MenuItem>
+                  <MenuItem value="Evening">Evening (6:00 PM - 9:00 PM)</MenuItem>
+                  <MenuItem value="Night">Night (9:00 PM - 12:00 AM)</MenuItem>
+                  <MenuItem value="Late_Night">Late Night (12:00 AM - 3:00 AM)</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Arrival Time */}
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth className="custom-textfield" required>
+                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Arrival Time</InputLabel>
+                <Select label="Arrival Time" value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)}>
+                  <MenuItem value="Early_Morning">Early Morning (3:00 AM - 6:00 AM)</MenuItem>
+                  <MenuItem value="Morning">Morning (6:00 AM - 12:00 PM)</MenuItem>
+                  <MenuItem value="Afternoon">Afternoon (12:00 PM - 6:00 PM)</MenuItem>
+                  <MenuItem value="Evening">Evening (6:00 PM - 9:00 PM)</MenuItem>
+                  <MenuItem value="Night">Night (9:00 PM - 12:00 AM)</MenuItem>
+                  <MenuItem value="Late_Night">Late Night (12:00 AM - 3:00 AM)</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Departure Date */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                type="datetime-local"
+                label="Departure Date"
+                variant="outlined"
+                fullWidth
+                required
+                InputLabelProps={{
+                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                  shrink: true
+                }}
+                className="custom-textfield"
+                value={departureDate}
+                onChange={(e) => setDepartureDate(e.target.value)}
+              />
+            </Grid>
+
+            {/* Arrival Date */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                type="datetime-local"
+                label="Arrival Date"
+                variant="outlined"
+                value={arrivalDate}
+                onChange={(e) => setArrivalDate(e.target.value)}
+                InputLabelProps={{
+                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                  shrink: true
+                }}
+                className="custom-textfield"
+                required
+                fullWidth
+              />
+            </Grid>
+
             {/* Flight Class */}
             <Grid item xs={12} md={6}>
               <FormControl fullWidth className="custom-textfield" required>
                 <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Class</InputLabel>
-                <Select value={Class} onChange={(e) => setFlightClass(e.target.value)}>
-                  <MenuItem value="economy">Economy</MenuItem>
-                  <MenuItem value="business">Business</MenuItem>
+                <Select label="Class" value={Class} onChange={(e) => setFlightClass(e.target.value)}>
+                  <MenuItem value="Economy">Economy</MenuItem>
+                  <MenuItem value="Business">Business</MenuItem>
                 </Select>
               </FormControl>
+            </Grid>
+
+            {/* Buy Ticket Date */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                type="datetime-local"
+                label="Date You Buy Tickets"
+                variant="outlined"
+                value={buyTicketDate}
+                onChange={(e) => setBuyTicketDate(e.target.value)}
+                InputLabelProps={{
+                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                  shrink: true
+                }}
+                className="custom-textfield"
+                required
+                fullWidth
+              />
             </Grid>
 
             {/* Submit Button */}
@@ -266,14 +371,6 @@ const Fare = () => {
             </Grid>
           </Grid>
         </form>
-
-        {/* Confirmation */}
-        {confirmation && (
-          <Typography variant="h6" style={{ marginTop: "20px" }}>
-            {`Flight from ${confirmation.sourceCity} to ${confirmation.destinationCity} with ${confirmation.airline} (${confirmation.flightClass}).`}<br />
-            {`Departure time: ${confirmation.departureTime}, Arrival time: ${confirmation.arrivalTime}, Stops: ${confirmation.stops}.`}<br />
-          </Typography>
-        )}
         
         {/* Flight Path Visualization */}
         {pathVisible && flightPath.length === 2 && (
@@ -281,8 +378,8 @@ const Fare = () => {
         )}
 
         {/* Flight Details Table Visualization */}
-        {flightTable && (
-          <FlightTable confirmation={confirmation} />
+        {confirmations.length > 0 && (
+          <FlightTableForFare confirmations={confirmations} />
         )}
       </Paper>
     </Container>

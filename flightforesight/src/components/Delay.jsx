@@ -1,3 +1,4 @@
+// src/components/Delay.jsx
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -7,91 +8,148 @@ import {
   Button,
   TextField,
   CircularProgress,
-  Autocomplete,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
+  Autocomplete
 } from "@mui/material";
 import { motion } from "framer-motion";
 import FlightPath from './FlightPath';
-import FlightTable from "./FlightTable";
-import axios from 'axios';
+import FlightTableForDelay from "./FlightTableForDelay";
+import axios from "axios";
 
 const Delay = () => {
-  const [sourceCity, setSourceCity] = useState("");
-  const [departureTime, setDepartureTime] = useState("");
-  const [stops, setStops] = useState("");
-  const [arrivalTime, setArrivalTime] = useState("");
-  const [destinationCity, setDestinationCity] = useState("");
-  const [Class, setFlightClass] = useState("");
+  const [originAirport, setOriginAirport] = useState("");
+  const [destinationAirport, setDestinationAirport] = useState("");
+  const [scheduledDeparture, setScheduledDeparture] = useState("");
+  const [scheduledArrival, setScheduledArrival] = useState("");
+  const [realDeparture, setRealDeparture] = useState("");
   const [airports, setAirports] = useState([]);
-  const [airline, setAirlines] = useState([]);
-  const [selectedAirline, setSelectedAirline] = useState("");
   const [loading, setLoading] = useState(false);
-  const [confirmation, setConfirmation] = useState(null);
+  const [confirmations, setConfirmations] = useState([]);
   const [flightPath, setFlightPath] = useState([]);
   const [pathVisible, setPathVisible] = useState(false);
-  const [flightTable, setFlightTable] = useState(null); // State to store flight details for the table
+  const [flightTable, setFlightTable] = useState(null);
 
-  // Fetch airports and airlines
+  // Fetch airports data
   const fetchAirportsData = async () => {
     try {
-      const response = await fetch("airports.json"); // Replace with actual path
+      const response = await fetch("airports.json"); 
       const data = await response.json();
       setAirports(data);
     } catch (error) {
-      console.error("Error fetching airports data:", error);
-    }
-  };
-
-  const fetchAirlinesData = async () => {
-    try {
-      const response = await fetch("airlines.json"); // Replace with actual path
-      const data = await response.json();
-      setAirlines(data);
-    } catch (error) {
-      console.error("Error fetching airlines data:", error);
+      console.error("Airports data cannot be fetched:", error);
     }
   };
 
   useEffect(() => {
     fetchAirportsData();
-    fetchAirlinesData();
   }, []);
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const toRadians = (degrees) => degrees * (Math.PI / 180);  // Convert degrees to radians
+    const R = 6371; // Radius of the Earth in kilometers
+
+    const φ1 = toRadians(lat1);
+    const φ2 = toRadians(lat2);
+    const Δφ = toRadians(lat2 - lat1);
+    const Δλ = toRadians(lon2 - lon1);
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in kilometers
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const source_city = airports.find((airport) => airport.city === sourceCity);
-    const destination_city = airports.find((airport) => airport.city === destinationCity);
-
-    if (sourceCity === destinationCity) {
-      alert("Please select different cities for source and destination.");
+    if (originAirport === destinationAirport) {
+      alert("Please select different airports.");
       setLoading(false);
       return;
     }
 
-    const data = {
-      airline: selectedAirline,
-      sourceCity: source_city.city,
-      departureTime,
-      stops,
-      arrivalTime,
-      destinationCity: destination_city.city,
-      flightClass: Class,
+    // Convert the date and time inputs to Date objects
+    const ScheduledDepartureTime = new Date(scheduledDeparture);
+    const ScheduledArrivalTime = new Date(scheduledArrival);
+    const RealDepartureTime = new Date(realDeparture);
+
+    if (ScheduledArrivalTime <= ScheduledDepartureTime || ScheduledArrivalTime <= RealDepartureTime) {
+      alert("Arrival time must be after the departure time.");
+      setLoading(false);
+      return;
+    }
+
+    // Calculate the flight duration (in hours)
+    const delay_in_milliseconds = RealDepartureTime - ScheduledDepartureTime;
+    const delay_in_minutes = Math.abs(delay_in_milliseconds) / (1000 * 60); // Convert ms to minutes
+
+    // Calculate the distance using lat/lon of the origin and destination airports
+    const distance = calculateDistance(
+      originAirport.latitude,
+      originAirport.longitude,
+      destinationAirport.latitude,
+      destinationAirport.longitude
+    );
+
+    const planeVelocity = 880 // The typical speed is between 800 - 965 km/h
+    const airTime = distance / planeVelocity * 60; // Convert hours to minutes
+
+    // Extract month, day, and day of week from scheduledDeparture
+    const month = ScheduledDepartureTime.getMonth() + 1; // getMonth() is zero-based
+    const day = ScheduledDepartureTime.getDate();
+    const daysofweek = ScheduledDepartureTime.getDay() + 1; // getDay() is zero-based (0 for Sunday)
+
+    // Extract hours and minutes, then convert to hhmm format
+    const formatTimeToHHMM = (date) => {
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return parseInt(`${hours}${minutes}`);
     };
 
-    console.log("Submitting Data:", data);
+    const scheduledDepartureHHMM = formatTimeToHHMM(ScheduledDepartureTime);
+    const scheduledArrivalHHMM = formatTimeToHHMM(ScheduledArrivalTime);
 
-    setConfirmation(data);
-    setFlightTable(data);
+    const data = {
+      month: parseInt(month),
+      day: parseInt(day),
+      daysofweek: parseInt(daysofweek),
+      originAirport: originAirport.iata,
+      destinationAirport: destinationAirport.iata,
+      scheduledDeparture: scheduledDepartureHHMM,
+      scheduledArrival: scheduledArrivalHHMM,
+      departureDelay: parseInt(delay_in_minutes),
+      airTime: parseFloat(airTime),
+      distance: parseInt(distance)
+    };
 
-    setFlightPath([source_city, destination_city]);
-    setPathVisible(true);
+    try {
+      const response = await axios.post("http://localhost:8000/delay/predict/", data, {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      console.log("Predicted Delay:", response.data.predicted_delay);
+    
+      // Update state with the confirmation and predicted fare
+      setConfirmations([...confirmations, {...data, delay: response.data.predicted_delay}]);
+      setFlightTable(data);
+      setFlightPath([originAirport, destinationAirport]); // Make sure to use correct keys
+      setPathVisible(true);
+    } catch (error) {
+      console.error("There is error while predicting delay:", error);
+      alert("There is error occurred while predicting delay.");
+    } finally {
+      setLoading(false);
+    }
 
-    setLoading(false);
+      // console.log("Submitting Data:", data);
+      // setConfirmations([...confirmations, {...data}]);
+      // setFlightPath([originAirport, destinationAirport]); 
+      // setPathVisible(true);
+      // setFlightTable(data);
+      // setLoading(false); 
   };
 
   return (
@@ -101,40 +159,20 @@ const Delay = () => {
         style={{ padding: "20px", marginTop: "20px", boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)" }}
       >
         <Typography variant="h4" gutterBottom sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>
-          Flight Fare Prediction
+          Flight Delay Prediction
         </Typography>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            {/* Airline */}
+
+            {/* Origin Airport */}
             <Grid item xs={12} md={6}>
               <Autocomplete
-                options={airline}
+                options={airports}
                 getOptionLabel={(option) => `${option.name} (${option.iata})`}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Airline"
-                    variant="outlined"
-                    InputLabelProps={{
-                      style: { color: 'var(--primary-color)', fontWeight: 'bold' },
-                    }}
-                    className="custom-textfield" 
-                    required
-                  />
-                )}
-                onChange={(event, newValue) => setSelectedAirline(newValue ? newValue.name : "")}
-              />
-            </Grid>
-
-            {/* Source City */}
-            <Grid item xs={12} md={6}>
-              <Autocomplete
-                options={airports}
-                getOptionLabel={(option) => `${option.city} - ${option.name} (${option.iata})`}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Source City"
+                    label="Origin Airport"
                     variant="outlined"
                     InputLabelProps={{
                       style: { color: 'var(--primary-color)', fontWeight: 'bold' },
@@ -143,61 +181,19 @@ const Delay = () => {
                     required
                   />
                 )}
-                onChange={(event, newValue) => setSourceCity(newValue ? newValue.city : "")}
+                onChange={(event, newValue) => setOriginAirport(newValue)}
               />
             </Grid>
 
-            {/* Departure Time */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Departure Time</InputLabel>
-                <Select value={departureTime} onChange={(e) => setDepartureTime(e.target.value)}>
-                  <MenuItem value="early-morning">Early Morning (3:00 AM - 6:00 AM)</MenuItem>
-                  <MenuItem value="morning">Morning (6:00 AM - 12:00 PM)</MenuItem>
-                  <MenuItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</MenuItem>
-                  <MenuItem value="evening">Evening (6:00 PM - 9:00 PM)</MenuItem>
-                  <MenuItem value="night">Night (9:00 PM - 12:00 AM)</MenuItem>
-                  <MenuItem value="late-night">Late Night (12:00 AM - 3:00 AM)</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Stops */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Stops</InputLabel>
-                <Select value={stops} onChange={(e) => setStops(e.target.value)}>
-                  <MenuItem value="zero">Direct</MenuItem>
-                  <MenuItem value="one">One Stop</MenuItem>
-                  <MenuItem value="two-or-more">Two Or More Stops</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Arrival Time */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Arrival Time</InputLabel>
-                <Select value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)}>
-                  <MenuItem value="early-morning">Early Morning (3:00 AM - 6:00 AM)</MenuItem>
-                  <MenuItem value="morning">Morning (6:00 AM - 12:00 PM)</MenuItem>
-                  <MenuItem value="afternoon">Afternoon (12:00 PM - 6:00 PM)</MenuItem>
-                  <MenuItem value="evening">Evening (6:00 PM - 9:00 PM)</MenuItem>
-                  <MenuItem value="night">Night (9:00 PM - 12:00 AM)</MenuItem>
-                  <MenuItem value="late-night">Late Night (12:00 AM - 3:00 AM)</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Destination City */}
+            {/* Destination Airport */}
             <Grid item xs={12} md={6}>
               <Autocomplete
                 options={airports}
-                getOptionLabel={(option) => `${option.city} - ${option.name} (${option.iata})`}
+                getOptionLabel={(option) => `${option.name} (${option.iata})`}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Destination City"
+                    label="Destination Airport"
                     variant="outlined"
                     InputLabelProps={{
                       style: { color: 'var(--primary-color)', fontWeight: 'bold' },
@@ -206,19 +202,62 @@ const Delay = () => {
                     required
                   />
                 )}
-                onChange={(event, newValue) => setDestinationCity(newValue ? newValue.city : "")}
+                onChange={(event, newValue) => setDestinationAirport(newValue)}
               />
             </Grid>
 
-            {/* Flight Class */}
+            {/* Scheduled Departure */}
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth className="custom-textfield" required>
-                <InputLabel sx={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>Class</InputLabel>
-                <Select value={Class} onChange={(e) => setFlightClass(e.target.value)}>
-                  <MenuItem value="economy">Economy</MenuItem>
-                  <MenuItem value="business">Business</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                type="datetime-local"
+                label="Scheduled Departure"
+                variant="outlined"
+                fullWidth
+                required
+                InputLabelProps={{
+                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                  shrink: true
+                }}
+                className="custom-textfield"
+                value={scheduledDeparture}
+                onChange={(e) => setScheduledDeparture(e.target.value)}
+              />
+            </Grid>
+
+            {/* Scheduled Arrival */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                type="datetime-local"
+                label="Scheduled Arrival"
+                variant="outlined"
+                fullWidth
+                required
+                InputLabelProps={{
+                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                  shrink: true
+                }}
+                className="custom-textfield"
+                value={scheduledArrival}
+                onChange={(e) => setScheduledArrival(e.target.value)}
+              />
+            </Grid>
+
+            {/* Real-Time Departure */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                type="datetime-local"
+                label="Real-Time Departure"
+                variant="outlined"
+                fullWidth
+                required
+                InputLabelProps={{
+                  style: { color: 'var(--primary-color)', fontWeight: 'bold' },
+                  shrink: true
+                }}
+                className="custom-textfield"
+                value={realDeparture}
+                onChange={(e) => setRealDeparture(e.target.value)}
+              />
             </Grid>
 
             {/* Submit Button */}
@@ -245,22 +284,14 @@ const Delay = () => {
           </Grid>
         </form>
 
-        {/* Confirmation */}
-        {confirmation && (
-          <Typography variant="h6" style={{ marginTop: "20px" }}>
-            {`Flight from ${confirmation.sourceCity} to ${confirmation.destinationCity} with ${confirmation.airline} (${confirmation.flightClass}).`}<br />
-            {`Departure time: ${confirmation.departureTime}, Arrival time: ${confirmation.arrivalTime}, Stops: ${confirmation.stops}.`}<br />
-          </Typography>
-        )}
-        
         {/* Flight Path Visualization */}
         {pathVisible && flightPath.length === 2 && (
           <FlightPath flightPath={flightPath} />
         )}
 
         {/* Flight Details Table Visualization */}
-        {flightTable && (
-          <FlightTable confirmation={confirmation} />
+        {confirmations.length > 0 && (
+          <FlightTableForDelay confirmations={confirmations} />
         )}
       </Paper>
     </Container>
@@ -268,4 +299,3 @@ const Delay = () => {
 };
 
 export default Delay;
-

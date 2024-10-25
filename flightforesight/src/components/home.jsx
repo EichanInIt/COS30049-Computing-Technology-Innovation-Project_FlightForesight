@@ -2,7 +2,7 @@
 import React from 'react';
 import Card from 'react-bootstrap/Card';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './components.css'; // Import combined CSS
+import './components.css'; 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBriefcase, faBirthdayCake, faUniversity } from '@fortawesome/free-solid-svg-icons';
 
@@ -17,7 +17,7 @@ function Home() {
   const teamMembers = [
     {
       name: 'Justin Nguyen',
-      dob: 'January 15, 2005',
+      dob: 'September 18, 2005',
       description: 'A dedicated software developer and technical provider.',
       university: 'Swinburne University Of Technology',
       role: 'Software Developer',
