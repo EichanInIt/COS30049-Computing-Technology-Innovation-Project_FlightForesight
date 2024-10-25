@@ -132,10 +132,9 @@ const Delay = () => {
         }
       });
       console.log("Predicted Delay:", response.data.predicted_delay);
-      console.log("Delay Classification:", response.data.classification); // log classification
 
-      // Update state with the confirmation and predicted delay + classification
-      setConfirmations([...confirmations, { ...data, delay: response.data.predicted_delay, classification: response.data.classification }]);
+      // Update state with the confirmation, predicted delay, and classification
+      setConfirmations([...confirmations, {...data, delay: response.data.predicted_delay}]);
       setFlightTable(data);
       setFlightPath([originAirport, destinationAirport]);
       setPathVisible(true);

@@ -107,7 +107,7 @@ async def predict_flight_fare(flight_data: FlightFareRequest, db: Session = Depe
         db.refresh(flight_prediction)
 
         # Return the predicted fare (rounded to 2 decimal places)
-        return JSONResponse(content={"predicted_fare": round(predicted_fare[0], 2)}, media_type="application/json")
+        return JSONResponse(content={"predicted_fare": round(predicted_fare[0], 2)})
     
     except Exception as e:
         logging.error(f"Prediction error: {str(e)}")

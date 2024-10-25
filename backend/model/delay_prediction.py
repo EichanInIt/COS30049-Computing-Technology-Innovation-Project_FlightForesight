@@ -47,29 +47,6 @@ except Exception as e:
     logging.error(f"Error loading model or preprocessor: {str(e)}")
     raise RuntimeError("Model or preprocessor file not found or invalid.")
 
-# Load the classification model and preprocessor components
-try:
-    classification_model_path = os.path.join("model", "xgboost_tuned_model.pkl")
-    classification_preprocessor_path = os.path.join("preprocessor", "preprocessorfordelay-classify.pkl")
-    classification_model = joblib.load(classification_model_path)
-    classification_preprocessor = joblib.load(classification_preprocessor_path)  # Load as dictionary
-
-    # Extract label encoders and scaler from classification preprocessor
-    classification_label_encoders = classification_preprocessor['label_encoders']
-    classification_scaler = classification_preprocessor['scaler']
-
-    # Define columns for each transformer based on original labeling
-    classification_categorical_cols = list(classification_label_encoders.keys())
-    classification_numerical_cols = ["SCHEDULED_DEPARTURE", "DEPARTURE_DELAY", "AIR_TIME", "DISTANCE", "SCHEDULED_ARRIVAL", "PREDICTED_DELAY"]
-
-    # Re-create the ColumnTransformer with the scaler for numerical columns
-    classification_preprocessor = ColumnTransformer(
-        transformers=[('scaler', classification_scaler, classification_numerical_cols)]
-    )
-except Exception as e:
-    logging.error(f"Error loading classification model or preprocessor: {str(e)}")
-    raise RuntimeError("Classification model or preprocessor file not found or invalid.")
-
 # Request data model for flight fare prediction
 class FlightDelayRequest(BaseModel):
       month: int
@@ -146,53 +123,12 @@ async def predict_flight_fare(flight_data: FlightDelayRequest, db: Session = Dep
         db.refresh(flight_prediction)
 
         # Return the predicted fare (rounded to 2 decimal places)
-        return JSONResponse(content={"predicted_delay": round(predicted_delay[0], 2)}, media_type="application/json")
+        return JSONResponse(content={"predicted_delay": round(predicted_delay[0], 2)})
     
     except Exception as e:
         logging.error(f"Prediction error: {str(e)}")
         db.rollback()
         raise HTTPException(status_code=500, detail="Flight delay cannot be predicted.")
-
-# Classification endpoint
-@app.post("/delay/classify/")
-async def classify_delay(flight_data: FlightDelayRequest, db: Session = Depends(get_db)):
-    try:
-        # Step 1: Get the predicted delay from the delay prediction model
-        prediction_response = await predict_flight_fare(flight_data, db)
-        predicted_delay = prediction_response["predicted_delay"]
-        
-        # Step 2: Transform the input data with the predicted delay added
-        input_df = pd.DataFrame({
-            'MONTH': [flight_data.month],
-            'DAY': [flight_data.day],
-            'DAY_OF_WEEK': [flight_data.daysofweek],
-            'ORIGIN_AIRPORT': [flight_data.originAirport],
-            'DESTINATION_AIRPORT': [flight_data.destinationAirport],
-            'SCHEDULED_DEPARTURE': [flight_data.scheduledDeparture],
-            'SCHEDULED_ARRIVAL': [flight_data.scheduledArrival],
-            'DEPARTURE_DELAY': [flight_data.departureDelay],
-            'AIR_TIME': [flight_data.airTime],
-            'DISTANCE': [flight_data.distance],
-            'PREDICTED_DELAY': [predicted_delay]
-        })
-        
-        # Apply label encoders for categorical columns
-        for col, encoder in classification_label_encoders.items():
-            input_df[col] = encoder.fit_transform(input_df[col])
-        
-        # Apply preprocessor
-        transformed_features = classification_preprocessor.fit_transform(input_df)
-
-        # Step 3: Perform classification using the loaded model
-        delay_class = classification_model.predict(transformed_features)[0]
-
-        # Return the classification result
-        return JSONResponse(content={"delay_classification": "Delayed" if delay_class == 1 else "On Time"}, media_type="application/json")
-    
-    except Exception as e:
-        logging.error(f"Classification error: {str(e)}")
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Flight delay cannot be classified.")
 
 # Root endpoint 
 @app.get("/delay")
