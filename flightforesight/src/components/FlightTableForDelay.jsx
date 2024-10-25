@@ -2,19 +2,6 @@
 import React from "react";
 import Plot from "react-plotly.js";
 
-const formatDateTime = (isoString) => {
-    const date = new Date(isoString);
-    const options = {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: true
-    };
-    return new Intl.DateTimeFormat('en-GB', options).format(date);
-  };
-
 const FlightTableForDelay = ({ confirmations }) => { 
     // Handle multiple flight records   
   const tableData = () => {
@@ -30,6 +17,7 @@ const FlightTableForDelay = ({ confirmations }) => {
     const airTimes = confirmations.map(record => record.airTime.toFixed(0));
     const distances = confirmations.map(record => record.distance.toFixed(0));
     const arrivalDelays = confirmations.map(record => record.delay);
+    const classifications = confirmations.map(record => record.classification ? "Delayed" : "On Time"); // interpret classification
 
     return [
       {
@@ -44,7 +32,8 @@ const FlightTableForDelay = ({ confirmations }) => {
             "Departure Delay (minutes)",
             "Air Time (minutes)",
             "Distance (km)",
-            "Arrival Delay (minutes)"
+            "Arrival Delay (minutes)",
+            "Classification"
           ],
           align: "center",
           line: { width: 1, color: 'black' },
@@ -61,7 +50,8 @@ const FlightTableForDelay = ({ confirmations }) => {
             departureDelays,
             airTimes,
             distances,
-            arrivalDelays
+            arrivalDelays,
+            classifications
           ],
           align: "center",
           line: { color: "black", width: 1 },

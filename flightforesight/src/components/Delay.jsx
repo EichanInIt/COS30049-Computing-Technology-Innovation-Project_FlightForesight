@@ -83,7 +83,7 @@ const Delay = () => {
 
     // Calculate the flight duration (in hours)
     const delay_in_milliseconds = RealDepartureTime - ScheduledDepartureTime;
-    const delay_in_minutes = Math.abs(delay_in_milliseconds) / (1000 * 60); // Convert ms to minutes
+    const delay_in_minutes = (delay_in_milliseconds) / (1000 * 60); // Convert ms to minutes
 
     // Calculate the distance using lat/lon of the origin and destination airports
     const distance = calculateDistance(
@@ -124,6 +124,7 @@ const Delay = () => {
       distance: parseInt(distance)
     };
 
+    // Inside handleSubmit function, after receiving response
     try {
       const response = await axios.post("http://localhost:8000/delay/predict/", data, {
         headers: {
@@ -131,25 +132,19 @@ const Delay = () => {
         }
       });
       console.log("Predicted Delay:", response.data.predicted_delay);
-    
-      // Update state with the confirmation and predicted fare
-      setConfirmations([...confirmations, {...data, delay: response.data.predicted_delay}]);
+      console.log("Delay Classification:", response.data.classification); // log classification
+
+      // Update state with the confirmation and predicted delay + classification
+      setConfirmations([...confirmations, { ...data, delay: response.data.predicted_delay, classification: response.data.classification }]);
       setFlightTable(data);
-      setFlightPath([originAirport, destinationAirport]); // Make sure to use correct keys
+      setFlightPath([originAirport, destinationAirport]);
       setPathVisible(true);
     } catch (error) {
-      console.error("There is error while predicting delay:", error);
-      alert("There is error occurred while predicting delay.");
+      console.error("Error while predicting delay:", error);
+      alert("An error occurred while predicting delay.");
     } finally {
       setLoading(false);
     }
-
-      // console.log("Submitting Data:", data);
-      // setConfirmations([...confirmations, {...data}]);
-      // setFlightPath([originAirport, destinationAirport]); 
-      // setPathVisible(true);
-      // setFlightTable(data);
-      // setLoading(false); 
   };
 
   return (

@@ -6,11 +6,11 @@ import joblib
 import pandas as pd
 import os
 import logging
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, TargetEncoder
-from sklearn.compose import ColumnTransformer
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from model.delay_prediction_db import DelayPrediction, get_db
+from sklearn.compose import ColumnTransformer
+import math
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -24,13 +24,51 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load the model 
+# Load the regression model and preprocessor components
 try:
-    model_path = os.path.join("model", "lgbm_regressor_delay.pkl")
-    model = joblib.load(model_path)
+    regression_model_path = os.path.join("model", "lgbm_regressor_delay.pkl")
+    regression_preprocessor_path = os.path.join("preprocessor", "preprocessorfordelays.pkl")
+    model = joblib.load(regression_model_path)
+    preprocessor_dict = joblib.load(regression_preprocessor_path)  # Load the saved preprocessor as a dictionary
+
+    # Extract label encoders and scaler from the preprocessor dictionary
+    label_encoders = preprocessor_dict['label_encoders']
+    scaler = preprocessor_dict['scaler']
+
+    # Define columns for each transformer based on original labeling
+    categorical_cols = list(label_encoders.keys())
+    numerical_cols = ["SCHEDULED_DEPARTURE", "DEPARTURE_DELAY", "AIR_TIME", "DISTANCE", "SCHEDULED_ARRIVAL"]
+
+    # Re-create the ColumnTransformer with the scaler for numerical columns
+    reconstructed_preprocessor = ColumnTransformer(
+        transformers=[('scaler', scaler, numerical_cols)]
+    )
 except Exception as e:
-    logging.error(f"Error loading model: {str(e)}")
-    raise RuntimeError("Model file not found.")
+    logging.error(f"Error loading model or preprocessor: {str(e)}")
+    raise RuntimeError("Model or preprocessor file not found or invalid.")
+
+# Load the classification model and preprocessor components
+try:
+    classification_model_path = os.path.join("model", "xgboost_tuned_model.pkl")
+    classification_preprocessor_path = os.path.join("preprocessor", "preprocessorfordelay-classify.pkl")
+    classification_model = joblib.load(classification_model_path)
+    classification_preprocessor = joblib.load(classification_preprocessor_path)  # Load as dictionary
+
+    # Extract label encoders and scaler from classification preprocessor
+    classification_label_encoders = classification_preprocessor['label_encoders']
+    classification_scaler = classification_preprocessor['scaler']
+
+    # Define columns for each transformer based on original labeling
+    classification_categorical_cols = list(classification_label_encoders.keys())
+    classification_numerical_cols = ["SCHEDULED_DEPARTURE", "DEPARTURE_DELAY", "AIR_TIME", "DISTANCE", "SCHEDULED_ARRIVAL", "PREDICTED_DELAY"]
+
+    # Re-create the ColumnTransformer with the scaler for numerical columns
+    classification_preprocessor = ColumnTransformer(
+        transformers=[('scaler', classification_scaler, classification_numerical_cols)]
+    )
+except Exception as e:
+    logging.error(f"Error loading classification model or preprocessor: {str(e)}")
+    raise RuntimeError("Classification model or preprocessor file not found or invalid.")
 
 # Request data model for flight fare prediction
 class FlightDelayRequest(BaseModel):
@@ -63,28 +101,20 @@ def transform_features(data: FlightDelayRequest):
         'DISTANCE': [data.distance],
     })
     
-    # Define columns to use for encoding
-    categorical_cols_onehot = ["MONTH", "DAY", "DAY_OF_WEEK"]
-    categorical_cols_target = ["ORIGIN_AIRPORT", "DESTINATION_AIRPORT"]
-    numerical_cols = ["SCHEDULED_DEPARTURE", "DEPARTURE_DELAY", "AIR_TIME", "DISTANCE", "SCHEDULED_ARRIVAL"]
-
-    # At the top of your script, after imports
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('target_enc', TargetEncoder(), categorical_cols_target),
-            ('onehot_enc', OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore'), categorical_cols_onehot),
-            ('scaler', StandardScaler(), numerical_cols)
-        ]
-    )
-
-    # Fit the preprocessor on input data and transform
-    transformed_features = preprocessor.fit_transform(input_df)
-
-    # Assign feature names to the transformed features
-    feature_names = preprocessor.get_feature_names_out()
-
-    # Return the feature set as a DataFrame with feature names
-    transformed_df = pd.DataFrame(transformed_features, columns=feature_names)
+    # Apply label encoders to categorical columns
+    for col, encoder in label_encoders.items():
+        try:
+            input_df[col] = encoder.fit_transform(input_df[col])
+        except ValueError as e:
+            logging.warning(f"Unseen label in column {col}: {e}")
+            input_df[col] = input_df[col].apply(lambda x: encoder.fit_transform([x])[0] if x in encoder.classes_ else 0)
+    
+    # Combine categorical and numerical columns for processing
+    # Transform only numerical columns using the scaler
+    input_df[numerical_cols] = reconstructed_preprocessor.fit_transform(input_df[numerical_cols])
+    
+    # Ensure the final DataFrame has all the expected columns
+    transformed_df = pd.DataFrame(input_df, columns=categorical_cols + numerical_cols)
     return transformed_df
 
 # Prediction endpoint
@@ -107,7 +137,7 @@ async def predict_flight_fare(flight_data: FlightDelayRequest, db: Session = Dep
             scheduledDeparture=flight_data.scheduledDeparture,
             scheduledArrival=flight_data.scheduledArrival,
             departureDelay=flight_data.departureDelay,
-            airTime=flight_data.airTime,
+            airTime=float(math.ceil(flight_data.airTime * 100)) / 100,
             distance=flight_data.distance,
             predicted_delay=round(predicted_delay[0], 2)
         )
@@ -121,7 +151,48 @@ async def predict_flight_fare(flight_data: FlightDelayRequest, db: Session = Dep
     except Exception as e:
         logging.error(f"Prediction error: {str(e)}")
         db.rollback()
-        raise HTTPException(status_code=500, detail="Error predicting flight delay")
+        raise HTTPException(status_code=500, detail="Flight delay cannot be predicted.")
+
+# Classification endpoint
+@app.post("/delay/classify/")
+async def classify_delay(flight_data: FlightDelayRequest, db: Session = Depends(get_db)):
+    try:
+        # Step 1: Get the predicted delay from the delay prediction model
+        prediction_response = await predict_flight_fare(flight_data, db)
+        predicted_delay = prediction_response["predicted_delay"]
+        
+        # Step 2: Transform the input data with the predicted delay added
+        input_df = pd.DataFrame({
+            'MONTH': [flight_data.month],
+            'DAY': [flight_data.day],
+            'DAY_OF_WEEK': [flight_data.daysofweek],
+            'ORIGIN_AIRPORT': [flight_data.originAirport],
+            'DESTINATION_AIRPORT': [flight_data.destinationAirport],
+            'SCHEDULED_DEPARTURE': [flight_data.scheduledDeparture],
+            'SCHEDULED_ARRIVAL': [flight_data.scheduledArrival],
+            'DEPARTURE_DELAY': [flight_data.departureDelay],
+            'AIR_TIME': [flight_data.airTime],
+            'DISTANCE': [flight_data.distance],
+            'PREDICTED_DELAY': [predicted_delay]
+        })
+        
+        # Apply label encoders for categorical columns
+        for col, encoder in classification_label_encoders.items():
+            input_df[col] = encoder.fit_transform(input_df[col])
+        
+        # Apply preprocessor
+        transformed_features = classification_preprocessor.fit_transform(input_df)
+
+        # Step 3: Perform classification using the loaded model
+        delay_class = classification_model.predict(transformed_features)[0]
+
+        # Return the classification result
+        return JSONResponse(content={"delay_classification": "Delayed" if delay_class == 1 else "On Time"}, media_type="application/json")
+    
+    except Exception as e:
+        logging.error(f"Classification error: {str(e)}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Flight delay cannot be classified.")
 
 # Root endpoint 
 @app.get("/delay")
