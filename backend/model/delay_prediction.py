@@ -24,47 +24,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load the regression model and preprocessor components
+# Load model and preprocessors
 try:
-    regression_model_path = os.path.join("model", "lgbm_regressor_delay.pkl")
-    regression_preprocessor_path = os.path.join("preprocessor", "preprocessorfordelays.pkl")
-    model = joblib.load(regression_model_path)
-    preprocessor_dict = joblib.load(regression_preprocessor_path)  # Load the saved preprocessor as a dictionary
-
-    # Extract label encoders and scaler from the preprocessor dictionary
-    label_encoders = preprocessor_dict['label_encoders']
-    scaler = preprocessor_dict['scaler']
-
-    # Define columns for each transformer based on original labeling
-    categorical_cols = list(label_encoders.keys())
-    numerical_cols = ["SCHEDULED_DEPARTURE", "DEPARTURE_DELAY", "AIR_TIME", "DISTANCE", "SCHEDULED_ARRIVAL"]
-
-    # Re-create the ColumnTransformer with the scaler for numerical columns
-    reconstructed_preprocessor = ColumnTransformer(
-        transformers=[('scaler', scaler, numerical_cols)]
-    )
+    model = joblib.load(os.path.join("model", "lgbm_regressor_delay.pkl"))
+    preprocessor = joblib.load(os.path.join("preprocessor", "preprocessorfordelays.pkl"))
 except Exception as e:
-    logging.error(f"Regression model or preprocessor cannot be loaded: {str(e)}")
-    raise RuntimeError("Model or preprocessor file cannot be found or invalid.")
+    logging.error(f"Failed to load model or preprocessor: {str(e)}")
+    raise RuntimeError("Error loading model or preprocessor.")
 
-# Request data model for flight fare prediction
+# Request data model
 class FlightDelayRequest(BaseModel):
-      month: int
-      day: int
-      daysofweek: int
-      originAirport: str
-      destinationAirport: str
-      scheduledDeparture: int
-      scheduledArrival: int
-      departureDelay: int
-      airTime: float
-      distance: int
+    month: int
+    day: int
+    daysofweek: int
+    originAirport: str
+    destinationAirport: str
+    scheduledDeparture: int
+    departureDelay: int
+    airTime: float
+    distance: int
+    scheduledArrival: int
 
 def transform_features(data: FlightDelayRequest):
-
-    # This function transforms the input data into the feature set used during model training.
-
-    # Create a DataFrame from the input data
     input_df = pd.DataFrame({
         'MONTH': [data.month],
         'DAY': [data.day],
@@ -72,40 +53,47 @@ def transform_features(data: FlightDelayRequest):
         'ORIGIN_AIRPORT': [data.originAirport],
         'DESTINATION_AIRPORT': [data.destinationAirport],
         'SCHEDULED_DEPARTURE': [data.scheduledDeparture],
-        'SCHEDULED_ARRIVAL': [data.scheduledArrival],
         'DEPARTURE_DELAY': [data.departureDelay],
         'AIR_TIME': [data.airTime],
         'DISTANCE': [data.distance],
+        'SCHEDULED_ARRIVAL': [data.scheduledArrival],
     })
-    
-    # Apply label encoders to categorical columns
+
+    # Extract components
+    label_encoders = preprocessor['label_encoders']
+    scaler = preprocessor['scaler']
+
+    # Define column groups
+    categorical_cols = list(label_encoders.keys())
+    numerical_cols = ["SCHEDULED_DEPARTURE", "DEPARTURE_DELAY", "AIR_TIME", "DISTANCE", "SCHEDULED_ARRIVAL"]
+
+    # Set up column transformer
+    column_transformer = ColumnTransformer(
+        transformers=[('scaler', scaler, numerical_cols)]
+    )
+
+    # Apply label encoders
     for col, encoder in label_encoders.items():
         try:
-            input_df[col] = encoder.fit_transform(input_df[col])
-        except ValueError as e:
-            logging.warning(f"Unseen label in column {col}: {e}")
-            input_df[col] = input_df[col].apply(lambda x: encoder.fit_transform([x])[0] if x in encoder.classes_ else 0)
+            input_df[col] = input_df[col].map(lambda x: encoder.transform([x])[0] if x in encoder.classes_ else 0)
+        except Exception as e:
+            logging.warning(f"Encoding error for {col}: {str(e)}")
+            input_df[col] = 0  # Handle unseen labels by setting a default
+
+    # Scale numerical columns
+    input_df[numerical_cols] = column_transformer.fit_transform(input_df[numerical_cols])
     
-    # Combine categorical and numerical columns for processing
-    # Transform only numerical columns using the scaler
-    input_df[numerical_cols] = reconstructed_preprocessor.fit_transform(input_df[numerical_cols])
-    
-    # Ensure the final DataFrame has all the expected columns
-    transformed_df = pd.DataFrame(input_df, columns=categorical_cols + numerical_cols)
-    return transformed_df
+    return input_df[categorical_cols + numerical_cols]
 
 # Prediction endpoint
 @app.post("/delay/predict/")
-async def predict_flight_fare(flight_data: FlightDelayRequest, db: Session = Depends(get_db)):
+async def predict_delay(flight_data: FlightDelayRequest, db: Session = Depends(get_db)):
     try:
-        # Transform input data into model features
         features = transform_features(flight_data)
-
-        # Perform prediction using the loaded model
         predicted_delay = model.predict(features)
 
-        # Store the features and prediction in the database
-        flight_prediction = DelayPrediction(
+        # Save to database
+        prediction_entry = DelayPrediction(
             month=flight_data.month,
             day=flight_data.day,
             daysofweek=flight_data.daysofweek,
@@ -118,31 +106,22 @@ async def predict_flight_fare(flight_data: FlightDelayRequest, db: Session = Dep
             distance=flight_data.distance,
             predicted_delay=round(predicted_delay[0], 2)
         )
-        db.add(flight_prediction)
+        db.add(prediction_entry)
         db.commit()
-        db.refresh(flight_prediction)
+        db.refresh(prediction_entry)
 
-        # Return the predicted fare (rounded to 2 decimal places)
         return {"predicted_delay": round(predicted_delay[0], 2)}
-    
     except Exception as e:
         logging.error(f"Prediction error: {str(e)}")
         db.rollback()
-        raise HTTPException(status_code=500, detail="Flight delay cannot be predicted.")
+        raise HTTPException(status_code=500, detail="Prediction error.")
 
-# Root endpoint 
-@app.get("/delay")
-async def root():
-    return {"message": "Flight Delay Prediction API is running"}
-
-# Endpoint to get the prediction record stored in the database
+# Get stored predictions
 @app.get("/delay/predictions/")
 async def get_predictions(db: Session = Depends(get_db)):
-    predictions = db.query(DelayPrediction).all()
-    return predictions
+    return db.query(DelayPrediction).all()
 
-# Main execution
+# Run app
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-

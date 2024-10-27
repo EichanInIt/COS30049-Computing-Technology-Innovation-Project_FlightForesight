@@ -95,77 +95,83 @@ const Fare = () => {
     const day_buy_ticket = new Date(buyTicketDate); // Get today's date
     const days_before_departure = Math.ceil((departureDateTime - day_buy_ticket) / (1000 * 60 * 60 * 24)); // Calculate days left
 
-    if (departureDateTime <= day_buy_ticket) {
+    if (departureDateTime < day_buy_ticket) {
       alert("The day you bought the ticket must be before the departure time.");
       setLoading(false);
       return;
     }
   
-    const data = {
+    const originalData = {
       airline: selectedAirline,
-      sourceCity: source_city.city,  
+      sourceCity: source_city.city,
       departureTime,
       stops,
       arrivalTime,
-      destinationCity: destination_city.city, 
+      destinationCity: destination_city.city,
       flightClass: Class,
       duration: parseFloat(duration_in_hours),
-      days_left: parseInt(days_before_departure)
-    };
+      days_left: days_before_departure
+  };
 
-    console.log("Submitting Data:", data);
+  console.log("Submitting Data:", originalData);
 
-    try {
-      const response = await axios.post("http://localhost:8000/fare/predict/", data, {
-        headers: {
-          "Content-Type": "application/json"
-        }
+  try {
+      // Fetch predicted fare for the original scenario
+      const response = await axios.post("http://localhost:8000/fare/predict/", originalData, {
+          headers: {
+              "Content-Type": "application/json"
+          }
       });
       console.log("Predicted Fare:", response.data.predicted_fare);
 
       // Add predicted fare to the original data
-      const originalRecordWithFare = { ...data, fare: response.data.predicted_fare, isOriginal: true};
+      const originalRecordWithFare = { ...originalData, fare: response.data.predicted_fare, isOriginal: true };
 
-      // Generate comparison records
-      const comparisonRecords = generateComparisonRecords(data, response.data.predicted_fare);
-    
-      setConfirmations([originalRecordWithFare, ...comparisonRecords]);
-      setFlightTable(data);
+      // Store confirmations starting with the original record
+      const allConfirmations = [originalRecordWithFare];
+
+      // Define the time periods for departure
+      const timePeriods = [
+          { daysleft: "0" },
+          { daysleft: "1" },
+          { daysleft: "7" },
+          { daysleft: "14" },
+          { daysleft: "30" },
+      ];
+
+      // Loop through the time periods to fetch predicted fares
+      for (const period of timePeriods) {
+          const predictionData = {
+              ...originalData,
+              days_left: parseInt(period.daysleft) // Update days_left for the prediction
+          };
+
+          const predictionResponse = await axios.post("http://localhost:8000/fare/predict/", predictionData, {
+              headers: {
+                  "Content-Type": "application/json"
+              }
+          });
+
+          // Create comparison record with predicted fare
+          const comparisonRecord = {
+              ...predictionData,
+              fare: predictionResponse.data.predicted_fare
+          };
+
+          allConfirmations.push(comparisonRecord);
+      }
+
+      setConfirmations(allConfirmations);
+      setFlightTable(originalData);
       setFlightPath([source_city, destination_city]);
       setPathVisible(true);
-    } catch (error) {
-      console.error("There is error while predicting fare:", error);
-      alert("There is error occurred while predicting fare.");
-    } finally {
+  } catch (error) {
+      console.error("There is an error while predicting fare:", error);
+      alert("There is an error occurred while predicting fare.");
+  } finally {
       setLoading(false);
-    }
-  };
-
-  const generateComparisonRecords = (originalData, predictedFare) => {
-    // Define the time periods for departure and arrival
-    const timePeriods = [
-      { departure: "Early_Morning", arrival: "Morning", time: "Early Morning (3:00 AM - 6:00 AM) to Morning (6:00 AM - 12:00 PM)" },
-      { departure: "Morning", arrival: "Afternoon", time: "Morning (6:00 AM - 12:00 PM) to Afternoon (12:00 PM - 6:00 PM)" },
-      { departure: "Afternoon", arrival: "Evening", time: "Afternoon (12:00 PM - 6:00 PM) to Evening (6:00 PM - 9:00 PM)" },
-      { departure: "Evening", arrival: "Night", time: "Evening (6:00 PM - 9:00 PM) to Night (9:00 PM - 12:00 AM)" },
-      { departure: "Night", arrival: "Late_Night", time: "Night (9:00 PM - 12:00 AM) to Late Night (12:00 AM - 3:00 AM)" }
-  ];
-
-    // Create comparison records for the selected time periods
-    return timePeriods.map(period => ({
-        airline: originalData.airline,
-        sourceCity: originalData.sourceCity,
-        departureTime: period.departure,
-        stops: originalData.stops,
-        arrivalTime: period.arrival,
-        destinationCity: originalData.destinationCity,
-        flightClass: originalData.flightClass,
-        duration: originalData.duration,
-        days_left: originalData.days_left,
-        fare: predictedFare
-    }));
+  }
 };
-
 
   return (
     <Container>

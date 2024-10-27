@@ -31,7 +31,7 @@ const Delay = () => {
   // Fetch airports data
   const fetchAirportsData = async () => {
     try {
-      const response = await fetch("airports.json"); 
+      const response = await fetch("USA_airports.json"); 
       const data = await response.json();
       setAirports(data);
     } catch (error) {

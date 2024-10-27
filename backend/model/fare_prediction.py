@@ -45,7 +45,6 @@ class FlightFareRequest(BaseModel):
     days_left: int
 
 def transform_features(data: FlightFareRequest):
-
     # This function transforms the input data into the feature set used during model training.
     # It applies label encoding to categorical variables as done during training.
 
@@ -114,6 +113,34 @@ async def predict_flight_fare(flight_data: FlightFareRequest, db: Session = Depe
         db.rollback()
         raise HTTPException(status_code=500, detail="Flight fare cannot be predicted.")
 
+async def predict_and_store(flight_data: FlightFareRequest, days_left: int, db: Session):
+    features = transform_features(flight_data)
+    predicted_fare = model.predict(features)
+    predicted_fare = round(predicted_fare[0], 2)
+
+    return predicted_fare
+
+# Define separate endpoints for each scenario with different "days_left" values
+@app.post("/fare/predict/day_0/")
+async def predict_fare_day_0(flight_data: FlightFareRequest, db: Session = Depends(get_db)):
+    return {"predicted_fare": await predict_and_store(flight_data, days_left=0, db=db)}
+
+@app.post("/fare/predict/day_1/")
+async def predict_fare_day_1(flight_data: FlightFareRequest, db: Session = Depends(get_db)):
+    return {"predicted_fare": await predict_and_store(flight_data, days_left=1, db=db)}
+
+@app.post("/fare/predict/day_7/")
+async def predict_fare_day_7(flight_data: FlightFareRequest, db: Session = Depends(get_db)):
+    return {"predicted_fare": await predict_and_store(flight_data, days_left=7, db=db)}
+
+@app.post("/fare/predict/day_14/")
+async def predict_fare_day_14(flight_data: FlightFareRequest, db: Session = Depends(get_db)):
+    return {"predicted_fare": await predict_and_store(flight_data, days_left=14, db=db)}
+
+@app.post("/fare/predict/day_30/")
+async def predict_fare_day_30(flight_data: FlightFareRequest, db: Session = Depends(get_db)):
+    return {"predicted_fare": await predict_and_store(flight_data, days_left=30, db=db)}
+
 # Root endpoint 
 @app.get("/fare")
 async def root():
@@ -129,4 +156,3 @@ async def get_predictions(db: Session = Depends(get_db)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-

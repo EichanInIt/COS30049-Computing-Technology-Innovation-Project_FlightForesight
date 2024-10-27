@@ -19,11 +19,11 @@ const FlightTableForFare = ({ confirmations }) => {
     const days_lefts = confirmations.map(record => record.days_left);
     const fares = confirmations.map(record => record.fare);
 
-    // Create row-wise colors, using 'lightblue' for the original data and 'white' for other rows
+    // Create row-wise colors, using 'lightgreen' for the original data and 'white' for other rows
     const rowColors = confirmations.map(record => 
-      record.isOriginal ? 'lightgreen': 'white'
+      record.isOriginal ? 'lightgreen' : 'white'
     );
-    
+
     // Create a nested array for cell colors, with each inner array representing a column
     const cellColors = [
       rowColors, rowColors, rowColors, rowColors, rowColors,
