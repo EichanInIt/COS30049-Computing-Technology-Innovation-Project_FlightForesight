@@ -112,7 +112,7 @@ async def predict_flight_fare(flight_data: FlightFareRequest, db: Session = Depe
     except Exception as e:
         logging.error(f"Prediction error: {str(e)}")
         db.rollback()
-        raise HTTPException(status_code=500, detail="Error predicting flight fare")
+        raise HTTPException(status_code=500, detail="Flight fare cannot be predicted.")
 
 # Root endpoint 
 @app.get("/fare")

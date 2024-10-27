@@ -44,8 +44,8 @@ try:
         transformers=[('scaler', scaler, numerical_cols)]
     )
 except Exception as e:
-    logging.error(f"Error loading model or preprocessor: {str(e)}")
-    raise RuntimeError("Model or preprocessor file not found or invalid.")
+    logging.error(f"Regression model or preprocessor cannot be loaded: {str(e)}")
+    raise RuntimeError("Model or preprocessor file cannot be found or invalid.")
 
 # Request data model for flight fare prediction
 class FlightDelayRequest(BaseModel):
@@ -123,7 +123,7 @@ async def predict_flight_fare(flight_data: FlightDelayRequest, db: Session = Dep
         db.refresh(flight_prediction)
 
         # Return the predicted fare (rounded to 2 decimal places)
-        return JSONResponse(content={"predicted_delay": round(predicted_delay[0], 2)})
+        return {"predicted_delay": round(predicted_delay[0], 2)}
     
     except Exception as e:
         logging.error(f"Prediction error: {str(e)}")
