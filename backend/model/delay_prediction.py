@@ -24,7 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load model and preprocessors
+# Load the regression model and preprocessors
 try:
     model = joblib.load(os.path.join("model", "lgbm_regressor_delay.pkl"))
     preprocessor = joblib.load(os.path.join("preprocessor", "preprocessorfordelays.pkl"))
@@ -45,7 +45,8 @@ try:
 
     # Define columns for each transformer based on original labeling
     classification_categorical_cols = list(classification_label_encoders.keys())
-    classification_numerical_cols = ["MONTH", "DAY", "DAY_OF_WEEK", "ORIGIN_AIRPORT", "DESTINATION_AIRPORT", "SCHEDULED_DEPARTURE", "DEPARTURE_DELAY", "AIR_TIME", "DISTANCE", "SCHEDULED_ARRIVAL"]
+    classification_numerical_cols = ["MONTH", "DAY", "DAY_OF_WEEK", "ORIGIN_AIRPORT", "DESTINATION_AIRPORT", 
+                                    "SCHEDULED_DEPARTURE", "DEPARTURE_DELAY", "AIR_TIME", "DISTANCE", "SCHEDULED_ARRIVAL"]
 
     # Re-create the ColumnTransformer with the scaler for numerical columns
     classification_preprocessor = ColumnTransformer(

@@ -152,8 +152,8 @@ const Delay = () => {
       setPredictions(response.data.predictions || []);
       setShowScatterPlot(true);
     } catch (error) {
-      console.error("Error while predicting delay:", error);
-      alert("An error occurred while predicting delay.");
+      console.error("There is an error while predicting delay:", error);
+      alert("There is an error occurred while predicting delay.");
     } finally {
       setLoading(false);
     }
