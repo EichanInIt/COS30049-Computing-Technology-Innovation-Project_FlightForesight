@@ -17,6 +17,7 @@ const FlightTableForDelay = ({ confirmations }) => {
     const airTimes = confirmations.map(record => record.airTime.toFixed(0));
     const distances = confirmations.map(record => record.distance.toFixed(0));
     const arrivalDelays = confirmations.map(record => record.delay);
+    const classifyDelays = confirmations.map(record => record.classification);
 
     return [
       {
@@ -31,7 +32,8 @@ const FlightTableForDelay = ({ confirmations }) => {
             "Departure Delay (minutes)",
             "Air Time (minutes)",
             "Distance (km)",
-            "Arrival Delay (minutes)"
+            "Arrival Delay (minutes)",
+            "Delay Or Not?"
           ],
           align: "center",
           line: { width: 1, color: 'black' },
@@ -48,7 +50,8 @@ const FlightTableForDelay = ({ confirmations }) => {
             departureDelays,
             airTimes,
             distances,
-            arrivalDelays
+            arrivalDelays,
+            classifyDelays
           ],
           align: "center",
           line: { color: "black", width: 1 },

@@ -30,6 +30,7 @@ const Delay = () => {
   const [flightTable, setFlightTable] = useState(null);
   const [predictions, setPredictions] = useState([]);
   const [showScatterPlot, setShowScatterPlot] = useState(false);
+  const [classification, setClassification] = useState(null);
 
   // Fetch airports data
   const fetchAirportsData = async () => {
@@ -135,10 +136,16 @@ const Delay = () => {
           "Content-Type": "application/json"
         }
       });
-      console.log("Predicted Delay:", response.data.predicted_delay);
-
-      // Update state with the confirmation, predicted delay, and classification
-      setConfirmations([...confirmations, {...data, delay: response.data.predicted_delay}]);
+    
+      const classificationResponse = await axios.post("http://localhost:8000/delay/classify/", data, {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+    
+      const delayClassification = classificationResponse.data.delay_classification;
+    
+      setConfirmations([...confirmations, { ...data, delay: response.data.predicted_delay, classification: delayClassification }]);
       setFlightTable(data);
       setFlightPath([originAirport, destinationAirport]);
       setPathVisible(true);
@@ -150,8 +157,8 @@ const Delay = () => {
     } finally {
       setLoading(false);
     }
-  };
-
+  }
+    
   return (
     <Container>
       <Paper
