@@ -13,6 +13,7 @@ import {
 import { motion } from "framer-motion";
 import FlightPath from './FlightPath';
 import FlightTableForDelay from "./FlightTableForDelay";
+import ScatterPlotForDelay from "./ScatterPlotForDelay";
 import axios from "axios";
 
 const Delay = () => {
@@ -27,6 +28,8 @@ const Delay = () => {
   const [flightPath, setFlightPath] = useState([]);
   const [pathVisible, setPathVisible] = useState(false);
   const [flightTable, setFlightTable] = useState(null);
+  const [predictions, setPredictions] = useState([]);
+  const [showScatterPlot, setShowScatterPlot] = useState(false);
 
   // Fetch airports data
   const fetchAirportsData = async () => {
@@ -63,6 +66,7 @@ const Delay = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setShowScatterPlot(false);
 
     if (originAirport === destinationAirport) {
       alert("Please select different airports.");
@@ -138,6 +142,8 @@ const Delay = () => {
       setFlightTable(data);
       setFlightPath([originAirport, destinationAirport]);
       setPathVisible(true);
+      setPredictions(response.data.predictions || []);
+      setShowScatterPlot(true);
     } catch (error) {
       console.error("Error while predicting delay:", error);
       alert("An error occurred while predicting delay.");
@@ -287,6 +293,9 @@ const Delay = () => {
         {confirmations.length > 0 && (
           <FlightTableForDelay confirmations={confirmations} />
         )}
+
+        {/* Scatter Plot Visualization */}
+        {showScatterPlot && <ScatterPlotForDelay predictions={predictions} />}
       </Paper>
     </Container>
   );

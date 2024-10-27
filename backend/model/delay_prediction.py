@@ -6,7 +6,6 @@ import joblib
 import pandas as pd
 import os
 import logging
-from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from model.delay_prediction_db import DelayPrediction, get_db
 from sklearn.compose import ColumnTransformer
