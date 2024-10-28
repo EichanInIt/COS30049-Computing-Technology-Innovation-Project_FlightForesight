@@ -75,9 +75,9 @@ COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT
 ```
 
 ## Installation
-### Flightforesight(Frontend)
+### Flightforesight(Frontend) 
 
-**Important Note**: Ensure that the terminal directory is in the right directory of `./COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT/flightforesight` 
+**Important Note**: Ensure that the terminal directory is strictly navigated to the right directory of `./COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT/flightforesight` 
 
 Run the following command to install all the required dependencies
 
@@ -87,13 +87,51 @@ npm install
 
 ### Backend
 
-**Important Note**: Ensure that the terminal directory is in the right directory of `./COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT/backend` 
+**Important Note**: Ensure that the terminal directory is strictly navigated to the right directory of `./COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT/backend` 
 
 Run the following command to install all the required dependencies
 
 ```
 pip install -r requirements.txt
 ```
+
+## Running
+
+### Flightforesight (frontend)
+
+**Important Note**: Ensure that the terminal directory is strictly navigated to the right directory of `./COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT/backend` 
+
+To start the localhost server hosting the website frontend, run the following command
+
+```
+npm run dev
+```
+
+If successful, the server should be accessible at:
+
+```
+http://localhost:5173/
+```
+
+This URL will open the React application in your web browser, allowing you to interact with the frontend.
+
+
+### Backend
+
+**Important Note**: A new terminal is needed to run the backend concurrently with the frontend. Make sure that this terminal is strictly in the correct directory of `./COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT/backend` 
+
+To start the backend server, use the following commands (one for each function):
+
+```
+uvicorn model.delay_prediction:app --reload
+```
+
+```
+uvicorn model.delay_prediction:app --reload
+```
+
+**Note**: Both backend processes use the same port, `8000`, but operate under different endpoints, so they **CANNOT** run at the same time on the same port. If you want to uses one, you must disabled the other.
+
 
 
 
