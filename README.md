@@ -2,14 +2,17 @@
 
 ## File structure
 
-Inside the project folder is divided in to 2 main subfolder including `backend` and `flightforesight`(frontend).
-1. Backend:
-- Inside the `backend` folder is divided into 2 main subfolder `model` and `preprocessor`. 
-- The `model` folder contains the backend of the web itself including the request processing file and 2 pre-trained Machine Learning `.pkl` model: `lgbm_regressor_delay.pkl`, `rf_regressor.pkl`, and `xgboost_tuned_model.pkl`.
-- The `preprocessor` folder contains the input processing code sent back from the frontend input form.
+The project folder is organized into two main subfolders: backend and flightforesight (frontend).
+
+1. Backend: 
+    - The `backend` folder is further divided into two main subfolders: `model` and `preprocessor`.
+    - The `model` folder contains the backend logic for the web application, including the request processing files and three pre-trained Machine Learning models: `lgbm_regressor_delay.pkl`, `rf_regressor.pkl`, and `xgboost_tuned_model.pkl`.
+    - The `preprocessor` folder has code for processing the input data received from the frontend input form.
 
 2. flightforesight (frontend):
-- The `flightforesight` folder is structured as a typical react project which contains `src`, `public`, and `package.json`
+    - The `flightforesight` folder is structured as a standard React project, containing `src`, `public`, and `package.json`.
+    - Additional files like `airlines.json`, `airports.json`, and `USA_airports.json` are included for user input validation and processing.
+    - Inside the `src` folder, there are two subfolders: `assets` and `components`. The assets folder is used to store media files, such as images of team members, while the `components` folder contains the React components that form the frontend of the web application.
 
 
 ```
@@ -71,3 +74,7 @@ COS30049-COMPUTING_TECHNOLOGY_INNOVATION_PROJECT\CODE\COS30049-COMPUTING-TECHNOL
 
 ```
 
+## Installation
+### Flightforesight (Frontend)
+
+**Important Note**: Ensure that the terminal directory is in the right directory of `./COS30049-COMPUTING_TECHNOLOGY_INNOVATION_PROJECT\CODE\COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT/flightforesight` 
