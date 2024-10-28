@@ -16,7 +16,7 @@ The project folder is organized into two main subfolders: backend and flightfore
 
 
 ```
-COS30049-COMPUTING_TECHNOLOGY_INNOVATION_PROJECT\CODE\COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT
+COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT
 │   .DS_Store
 │   .gitignore
 │   LICENSE
@@ -75,6 +75,25 @@ COS30049-COMPUTING_TECHNOLOGY_INNOVATION_PROJECT\CODE\COS30049-COMPUTING-TECHNOL
 ```
 
 ## Installation
-### Flightforesight (Frontend)
+### Flightforesight(Frontend)
 
-**Important Note**: Ensure that the terminal directory is in the right directory of `./COS30049-COMPUTING_TECHNOLOGY_INNOVATION_PROJECT\CODE\COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT/flightforesight` 
+**Important Note**: Ensure that the terminal directory is in the right directory of `./COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT/flightforesight` 
+
+Run the following command to install all the required dependencies
+
+```
+npm install
+```
+
+### Backend
+
+**Important Note**: Ensure that the terminal directory is in the right directory of `./COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT/backend` 
+
+Run the following command to install all the required dependencies
+
+```
+pip install -r requirements.txt
+```
+
+
+
