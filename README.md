@@ -2,6 +2,16 @@
 
 ## File structure
 
+Inside the project folder is divided in to 2 main subfolder including `backend` and `flightforesight`(frontend).
+1. Backend:
+- Inside the `backend` folder is divided into 2 main subfolder `model` and `preprocessor`. 
+- The `model` folder contains the backend of the web itself including the request processing file and 2 pre-trained Machine Learning `.pkl` model: `lgbm_regressor_delay.pkl`, `rf_regressor.pkl`, and `xgboost_tuned_model.pkl`.
+- The `preprocessor` folder contains the input processing code sent back from the frontend input form.
+
+2. flightforesight (frontend):
+- The `flightforesight` folder is structured as a typical react project which contains `src`, `public`, and `package.json`
+
+
 ```
 COS30049-COMPUTING_TECHNOLOGY_INNOVATION_PROJECT\CODE\COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT
 │   .DS_Store
@@ -60,3 +70,4 @@ COS30049-COMPUTING_TECHNOLOGY_INNOVATION_PROJECT\CODE\COS30049-COMPUTING-TECHNOL
                 ScatterPlotForDelay.jsx
 
 ```
+
