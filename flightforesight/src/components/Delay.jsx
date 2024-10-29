@@ -30,7 +30,6 @@ const Delay = () => {
   const [flightTable, setFlightTable] = useState(null);
   const [predictions, setPredictions] = useState([]);
   const [showScatterPlot, setShowScatterPlot] = useState(false);
-  const [classification, setClassification] = useState(null);
 
   // Fetch airports data
   const fetchAirportsData = async () => {
@@ -131,12 +130,14 @@ const Delay = () => {
 
     // Inside handleSubmit function, after receiving response
     try {
+      // Fetch predicted delay
       const response = await axios.post("http://localhost:8000/delay/predict/", data, {
         headers: {
           "Content-Type": "application/json"
         }
       });
     
+      // Fetch delay classification
       const classificationResponse = await axios.post("http://localhost:8000/delay/classify/", data, {
         headers: {
           "Content-Type": "application/json"

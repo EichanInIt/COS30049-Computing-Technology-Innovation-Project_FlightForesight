@@ -24,7 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load the regression model and preprocessors
+# Load the regression model and preprocessor components
 try:
     model = joblib.load(os.path.join("model", "lgbm_regressor_delay.pkl"))
     preprocessor = joblib.load(os.path.join("preprocessor", "preprocessorfordelays.pkl"))
@@ -37,7 +37,7 @@ try:
     classification_model_path = os.path.join("model", "xgboost_tuned_model.pkl")
     classification_preprocessor_path = os.path.join("preprocessor", "preprocessorfordelay-classify.pkl")
     classification_model = joblib.load(classification_model_path)
-    classification_preprocessor = joblib.load(classification_preprocessor_path)  # Load as dictionary
+    classification_preprocessor = joblib.load(classification_preprocessor_path) 
     
     # Extract label encoders and scaler from classification preprocessor
     classification_label_encoders = classification_preprocessor['label_encoders']

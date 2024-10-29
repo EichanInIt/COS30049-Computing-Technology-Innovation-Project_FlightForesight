@@ -16,7 +16,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fare_prediction.db")
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 
-# Define the FlightPrediction model
+# Define the FarePrediction model
 class FarePrediction(Base):
     __tablename__ = "fare_prediction"
 

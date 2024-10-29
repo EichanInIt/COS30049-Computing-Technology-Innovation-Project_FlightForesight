@@ -1,25 +1,25 @@
 // src/components/ScatterPlotForDelay.jsx
 import React, { useEffect, useState } from "react";
 import Plot from "react-plotly.js";
-import axios from "axios"; // Import axios for data fetching
+import axios from "axios"; 
 
-const ScatterPlotForDelay = () => { // Removed predictions prop
-  const [predictions, setPredictions] = useState([]); // State to hold predictions
+const ScatterPlotForDelay = () => { 
+  const [predictions, setPredictions] = useState([]); 
 
   useEffect(() => {
     const fetchPredictions = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/delay/predictions"); // Replace with your endpoint
-        setPredictions(response.data); // Set predictions state
+        const response = await axios.get("http://localhost:8000/delay/predictions"); 
+        setPredictions(response.data); 
       } catch (error) {
         console.error("Error fetching predictions:", error);
       } finally {
-        setLoading(false); // Set loading to false after fetch
+        setLoading(false); 
       }
     };
 
     fetchPredictions();
-  }, []); // Empty dependency array to run once on mount
+  }, []); 
 
   // Prepare data for the scatter plot
   const scatterData = () => {
@@ -33,7 +33,7 @@ const ScatterPlotForDelay = () => { // Removed predictions prop
       y: yValues,
       mode: 'markers',
       type: 'scatter',
-      marker: { size: 10, color: 'blue' },
+      marker: { size: 10, color: 'lightgreen' },
     }];
   };
 

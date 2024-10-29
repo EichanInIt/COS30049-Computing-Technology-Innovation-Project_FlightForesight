@@ -5,6 +5,7 @@ import Plot from 'react-plotly.js';
 const FlightPath = ({ flightPath }) => {
   const plotData = () => {
     if (flightPath.length < 2) return [];
+    // Extract each field into arrays for each column
     const latitudes = flightPath.map((airport) => airport.latitude);
     const longitudes = flightPath.map((airport) => airport.longitude);
     const airportDetails = flightPath.map((airport) => `${airport.name} (${airport.iata}), ${airport.city}`);
