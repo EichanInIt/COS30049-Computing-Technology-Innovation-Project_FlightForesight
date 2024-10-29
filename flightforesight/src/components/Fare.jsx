@@ -20,6 +20,7 @@ import axios from 'axios';
 import FlightTableForFare from "./FlightTableForFare";
 
 const Fare = () => {
+  // State variables to manage form inputs, loading states, and fetched data
   const [airline, setAirlines] = useState([]);
   const [selectedAirline, setSelectedAirline] = useState("");
   const [airports, setAirports] = useState([]);
@@ -38,7 +39,7 @@ const Fare = () => {
   const [pathVisible, setPathVisible] = useState(false);
   const [flightTable, setFlightTable] = useState(null); 
 
-  // Fetch airports and airlines data
+  // Fetch the airport and airline data from a local JSON file when the component mounts
   const fetchAirportsData = async () => {
     try {
       const response = await fetch("airports.json"); 
@@ -64,6 +65,7 @@ const Fare = () => {
     fetchAirlinesData();
   }, []);
 
+  // Handle form submission, initiate fare prediction
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -71,6 +73,7 @@ const Fare = () => {
     const source_city = airports.find((airport) => airport.iata === sourceCity);
     const destination_city = airports.find((airport) => airport.iata === destinationCity);
   
+    // Validate that source and destination cities are not the same
     if (source_city.city === destination_city.city) {
       alert("Please select different cities.");
       setLoading(false);
@@ -81,6 +84,7 @@ const Fare = () => {
     const departureDateTime = new Date(departureDate);
     const arrivalDateTime = new Date(arrivalDate);
 
+    // Ensure arrival time is after departure time
     if (arrivalDateTime <= departureDateTime) {
       alert("Arrival time must be after the departure time.");
       setLoading(false);
@@ -95,12 +99,14 @@ const Fare = () => {
     const day_buy_ticket = new Date(buyTicketDate); // Get today's date
     const days_before_departure = Math.ceil((departureDateTime - day_buy_ticket) / (1000 * 60 * 60 * 24)); // Calculate days left
 
+    // Validate that the day you bought the ticket is before the departure time
     if (departureDateTime < day_buy_ticket) {
       alert("The day you bought the ticket must be before the departure time.");
       setLoading(false);
       return;
     }
   
+    // Construct data payload for API requests
     const originalData = {
       airline: selectedAirline,
       sourceCity: source_city.city,
@@ -146,6 +152,7 @@ const Fare = () => {
               days_left: parseInt(period.daysleft) // Update days_left for the prediction
           };
 
+          // Fetch predicted fare for the updated scenario
           const predictionResponse = await axios.post("http://localhost:8000/fare/predict/", predictionData, {
               headers: {
                   "Content-Type": "application/json"
@@ -158,9 +165,11 @@ const Fare = () => {
               fare: predictionResponse.data.predicted_fare
           };
 
+          // Add the comparison record to the confirmations list
           allConfirmations.push(comparisonRecord);
       }
 
+      // Update the state variables with the fetched data
       setConfirmations(allConfirmations);
       setFlightTable(originalData);
       setFlightPath([source_city, destination_city]);

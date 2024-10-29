@@ -12,8 +12,10 @@ import MinhHoangDuong from '../assets/MinhHoangDuong.jpg';
 import Melvin from '../assets/Melvin.jpg';
 
 function Home() {
+  // Brief description of the team's background and focus
   const teamDescription = "Our team of dedicated professionals combines a passion for technology and innovation to tackle complex challenges. With expertise in software development, machine learning, and project management, we bring diverse skill sets to the table, enabling us to deliver cutting-edge solutions.";
 
+  // Array of team members with personal and professional details
   const teamMembers = [
     {
       name: 'Justin Nguyen',

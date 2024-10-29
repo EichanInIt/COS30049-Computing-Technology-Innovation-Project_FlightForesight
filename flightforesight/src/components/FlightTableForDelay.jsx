@@ -2,12 +2,14 @@
 import React from "react";
 import Plot from "react-plotly.js";
 
+// FlightTableForDelay component for displaying flight details in a table format
 const FlightTableForDelay = ({ confirmations }) => { 
-    // Handle multiple flight records   
+  // Helper function to transform confirmations data into Plotly table format
   const tableData = () => {
+    // Return an empty array if confirmations data is missing or empty
     if (!confirmations || confirmations.length === 0) return []; 
 
-    // Extract each field into arrays for each column
+    // Extract each flight detail field into arrays for table columns
     const months = confirmations.map(record => record.month);
     const days = confirmations.map(record => record.day);
     const daysofweeks = confirmations.map(record => record.daysofweek);
@@ -35,9 +37,9 @@ const FlightTableForDelay = ({ confirmations }) => {
             "Arrival Delay (minutes)",
             "Delay Or Not?"
           ],
-          align: "center",
-          line: { width: 1, color: 'black' },
-          fill: { color: 'lightgrey' }, 
+          align: "center", // Center-align header text
+          line: { width: 1, color: 'black' }, // Header border color and width
+          fill: { color: 'lightgrey' }, // Header background color
           font: { family: "Arial, sans-serif", size: 12, color: "black" },
         },
         cells: {
@@ -53,9 +55,9 @@ const FlightTableForDelay = ({ confirmations }) => {
             arrivalDelays,
             classifyDelays
           ],
-          align: "center",
-          line: { color: "black", width: 1 },
-          fill: { color: "white" },
+          align: "center", // Center-align cell text
+          line: { color: "black", width: 1 }, // Cell border color and width
+          fill: { color: "white" }, // Background color for each cell
           font: { family: "Arial, sans-serif", size: 12, color: "black" }
         },
       },
@@ -64,13 +66,13 @@ const FlightTableForDelay = ({ confirmations }) => {
 
   return (
     <Plot
-      data={tableData()}
+      data={tableData()} // Provide data formatted for Plotly table
       layout={{
-        title: "Flight Details",
-        height: 300,
-        margin: { t: 40, l: 0, r: 0, b: 0, pad: 4 },
+        title: "Flight Delay Prediction Details", // Title displayed above the table
+        height: 300, // Table height
+        margin: { t: 40, l: 0, r: 0, b: 0, pad: 4 }, // Layout margins
       }}
-      style={{ width: "100%", height: "400px" }} 
+      style={{ width: "100%", height: "400px" }} // Style for the table's width and height
     />
   );
 };

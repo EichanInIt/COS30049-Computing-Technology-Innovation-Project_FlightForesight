@@ -17,6 +17,7 @@ import ScatterPlotForDelay from "./ScatterPlotForDelay";
 import axios from "axios";
 
 const Delay = () => {
+  // State variables to manage form inputs, loading states, and fetched data
   const [originAirport, setOriginAirport] = useState("");
   const [destinationAirport, setDestinationAirport] = useState("");
   const [scheduledDeparture, setScheduledDeparture] = useState("");
@@ -31,7 +32,7 @@ const Delay = () => {
   const [predictions, setPredictions] = useState([]);
   const [showScatterPlot, setShowScatterPlot] = useState(false);
 
-  // Fetch airports data
+  // Fetch the airport data from a local JSON file when the component mounts
   const fetchAirportsData = async () => {
     try {
       const response = await fetch("USA_airports.json"); 
@@ -46,6 +47,7 @@ const Delay = () => {
     fetchAirportsData();
   }, []);
 
+  // Calculate distance between origin and destination airports based on coordinates
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const toRadians = (degrees) => degrees * (Math.PI / 180);  // Convert degrees to radians
     const R = 6371; // Radius of the Earth in kilometers
@@ -63,11 +65,13 @@ const Delay = () => {
     return R * c; // Distance in kilometers
   };
 
+  // Handle form submission, initiate delay prediction and classification
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setShowScatterPlot(false);
 
+    // Validate that origin and destination airports are not the same
     if (originAirport === destinationAirport) {
       alert("Please select different airports.");
       setLoading(false);
@@ -79,13 +83,14 @@ const Delay = () => {
     const ScheduledArrivalTime = new Date(scheduledArrival);
     const RealDepartureTime = new Date(realDeparture);
 
+    // Ensure arrival time is after both scheduled and real-time departure times
     if (ScheduledArrivalTime <= ScheduledDepartureTime || ScheduledArrivalTime <= RealDepartureTime) {
       alert("Arrival time must be after the departure time.");
       setLoading(false);
       return;
     }
 
-    // Calculate the flight duration (in hours)
+    // Calculate delay duration in minutes
     const delay_in_milliseconds = RealDepartureTime - ScheduledDepartureTime;
     const delay_in_minutes = (delay_in_milliseconds) / (1000 * 60); // Convert ms to minutes
 
@@ -97,6 +102,7 @@ const Delay = () => {
       destinationAirport.longitude
     );
 
+    // Calculate air time based on the distance and typical plane velocity
     const planeVelocity = 880 // The typical speed is between 800 - 965 km/h
     const airTime = distance / planeVelocity * 60; // Convert hours to minutes
 
@@ -115,6 +121,7 @@ const Delay = () => {
     const scheduledDepartureHHMM = formatTimeToHHMM(ScheduledDepartureTime);
     const scheduledArrivalHHMM = formatTimeToHHMM(ScheduledArrivalTime);
 
+    // Prepare data to send to the prediction and classification endpoints
     const data = {
       month: parseInt(month),
       day: parseInt(day),
@@ -130,22 +137,24 @@ const Delay = () => {
 
     // Inside handleSubmit function, after receiving response
     try {
-      // Fetch predicted delay
+      // Send data to delay prediction endpoint
       const response = await axios.post("http://localhost:8000/delay/predict/", data, {
         headers: {
           "Content-Type": "application/json"
         }
       });
     
-      // Fetch delay classification
+      // Send data to delay classification endpoint
       const classificationResponse = await axios.post("http://localhost:8000/delay/classify/", data, {
         headers: {
           "Content-Type": "application/json"
         }
       });
     
+      // Extract classification result
       const delayClassification = classificationResponse.data.delay_classification;
     
+      // Update state with the received predictions and classification results
       setConfirmations([...confirmations, { ...data, delay: response.data.predicted_delay, classification: delayClassification }]);
       setFlightTable(data);
       setFlightPath([originAirport, destinationAirport]);
