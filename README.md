@@ -132,6 +132,16 @@ uvicorn model.delay_prediction:app --reload
 
 **Note**: Both backend processes use the same port, `8000`, but operate under different endpoints, so they **CANNOT** run at the same time on the same port. If you want to uses one, you must disabled the other.
 
+### Database
+**Important Note**: A new terminal is needed to run the backend concurrently with the frontend. Make sure that this terminal is strictly in the correct directory of `./COS30049-COMPUTING-TECHNOLOGY-INNOVATION-PROJECT_FLIGHTFORESIGHT/backend` 
+To be able to observe the database of the delay prediction and fare prediction, following these steps:
+1. Install the DB browser for SQLite on https://sqlitebrowser.org/dl/. Choose your suitable versions.
+2. After installation is complete, open the app (it is called 'DB Browser for SQLite)
+3. Choose 'Open Database' and browse for the created database (there are 2 database: fare_prediction.db for fare prediction and delay_prediction.db for delay prediction. 
+Both databases are stored in the backend folder.)
+4. After opening the database, you can view the tables and data in the database by choosing the 'Browse Data' tab and you could execute SQL commands on 'Execute SQL' tab.
+This app is a high quality, visual, open source tool designed for people who want to create, search, and edit SQLite or SQLCipher database files. It works with Windows, macOS, and most versions of Linux and Unix.
+
 
 
 
