@@ -2,6 +2,15 @@
 
 ## Image
 
+### Home page
+![Home page](img/Home.png)
+
+### fare prediction
+![Fare prediction](img/fare_prediction.png)
+
+### delay prediction
+![Delay prediction](img/delay_prediction.png)
+
 
 ## File structure
 
