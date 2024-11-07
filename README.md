@@ -1,5 +1,8 @@
 # COS30049 - Computing Technology Innovation Project (CAA Flightforesight)
 
+## Image
+
+
 ## File structure
 
 The project folder is organized into two main subfolders: backend and flightforesight (frontend).
