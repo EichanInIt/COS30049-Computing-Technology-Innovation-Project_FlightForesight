@@ -119,11 +119,7 @@ To start the localhost server hosting the website frontend, run the following co
 npm run dev
 ```
 
-If successful, the server should be accessible at:
-
-```
-http://localhost:5173/
-```
+If successful, the server should be accessible in localhost
 
 This URL will open the React application in your web browser, allowing you to interact with the frontend.
 
